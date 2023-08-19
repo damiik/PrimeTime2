@@ -1,0 +1,4 @@
+(executable
+ (public_name PrimeTime2)
+ (name main)
+ (libraries dream-html dream tyxml base str))
