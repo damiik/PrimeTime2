@@ -7,10 +7,160 @@
 (* open Str *)
 
 
-(*ocamlfind ocamlopt -thread -c -package base,str,dream,tyxml main.ml -linkpkg -o ./main.bytes*)
-
+(* ocamlfind ocamlopt -thread -c -package base,str,dream,tyxml main.ml -linkpkg -o ./main.bytes *)
+(* dune exec PrimeTime2 *)
 
 let elt_to_string elt = Fmt.str "%a" (Tyxml.Html.pp_elt()) elt
+
+
+type row = {
+
+  id: int;
+  name: string;
+  mutable count: int;
+}
+
+let display_id request row = 
+  let open Tyxml.Html in 
+  form
+      ~a:[
+      Unsafe.string_attrib "hx-post" "/count"; 
+      Unsafe.string_attrib "hx-swap" "outerHTML";
+      Unsafe.string_attrib "hx-trigger" "click";
+      a_class["count"]] 
+    [ Tyxml.Html.Unsafe.data (Dream.csrf_tag request);
+      input ~a:[ a_hidden(); a_name "id"; a_value (Int.to_string row.id)] ();
+      txt (Int.to_string row.count)]
+  
+let display_delete request row = 
+  let open Tyxml.Html in 
+  form
+    ~a:[
+
+      Unsafe.string_attrib "hx-delete" "/delete";
+      Unsafe.string_attrib "hx-swap" "outerHTML";
+      Unsafe.string_attrib "hx-target" "closest .row";
+      Unsafe.string_attrib "hx-trigger" "click";
+      a_class["delete"] ]
+    [
+      Tyxml.Html.Unsafe.data (Dream.csrf_tag request);
+      input ~a:[a_hidden (); a_name "id"; a_value (Int.to_string row.id)] ();
+      txt "Delete me Daddy" ]
+
+let display_row request row =
+
+  let open Tyxml.Html in
+  div ~a:[a_class ["row"]] 
+    [
+    div ~a:[a_class["id"]] [txt (Int.to_string row.id)];
+    div ~a:[a_class["name"]] [txt row.name];
+    display_id request row;
+    display_delete request row]
+;;
+
+
+let response2 _ =
+  let open Tyxml in
+  let ocaml = Html.(a ~a:[a_href "ocaml.org"] [txt "OCaml!"]) in
+  Dream.html @@ elt_to_string ocaml
+;;
+
+let get_port () =  
+  try int_of_string (Sys.getenv "PORT")
+  
+  with
+  | Not_found -> 3000 
+;;
+
+
+let display_list request list =
+  let open Tyxml.Html in
+  div ~a:[a_class["list"]] (List.map (display_row request) list)
+;;
+
+let index request list =
+  let open Tyxml.Html in
+  html
+    (head 
+      (title (txt "Greeting")) 
+      [ script ~a:[a_src "https://unpkg.com/htmx.org@1.9.4"] (txt "")])
+    (body [display_list request list])
+;;
+
+let handle_id_request request data ~f =
+      let open Lwt.Syntax in
+      let* form = Dream.form (*~csrf:false*) request in
+      (match form with 
+        | `Ok [("id", id)] -> 
+                
+          let item_o = try Some( List.find (fun item -> item.id = int_of_string id ) !data ) with Not_found -> None in
+          (match item_o with
+            | None -> Dream.empty `Not_Found
+            | Some item -> f item 
+          )
+        | _ -> Dream.empty `Bad_Request
+      )
+
+let () = 
+
+  let data = ref [
+
+    {name = "foo1"; count = 1; id = 1};
+    {name = "foo2"; count = 1; id = 2};
+    {name = "foo3"; count = 1; id = 3};
+    {name = "foo4"; count = 1; id = 4};
+    {name = "foo5"; count = 1; id = 5};
+    {name = "foo6"; count = 1; id = 6};
+    {name = "foo7"; count = 1; id = 7};
+    {name = "foo8"; count = 1; id = 8};
+    {name = "foo9"; count = 1; id = 9};
+    {name = "foo10"; count = 1; id = 10}
+
+  ] in
+
+  Dream.run ~interface:"0.0.0.0" ~port:( get_port() )
+  (*Dream.run ~port:42069*)
+  @@ Dream.logger
+  @@ Dream.memory_sessions
+  @@ Dream.router [
+
+    Dream.get "/" (fun request -> Dream.html @@ elt_to_string @@ index request !data);
+
+    Dream.delete "/delete" (fun request ->
+      handle_id_request request data ~f:(fun item ->
+        data := List.filter (fun x -> 
+          x.id <> item.id) !data;
+          Dream.empty `OK
+        )
+    );
+
+    Dream.post "/count" (fun request -> 
+      handle_id_request request data ~f:(fun item ->
+          
+        item.count <- item.count + 1;
+        Dream.html @@ elt_to_string @@ (display_id request item)
+      )
+    )
+
+    ; Dream.post "/echo"(fun _ -> response2())
+    ]
+;;
+
+
+(*let display_id request row = 
+  let open Tyxml.Html in 
+  let json_id = "{\"id\": " ^ Int.to_string row.id ^ "}" in
+    div ~a:[
+      Unsafe.string_attrib "hx-post" "/count"; 
+      Unsafe.string_attrib "hx-swap" "outerHTML";
+      Unsafe.string_attrib "hx-vals" json_id;
+      a_class["count"]] 
+    [ Tyxml.Html.Unsafe.data (Dream.csrf_tag request);
+      input ~a:[ a_hidden(); a_name "id"; a_value (Int.to_string row.id)] ();
+      txt (Int.to_string row.count)]
+*)  
+
+
 
 (*
 
@@ -101,126 +251,6 @@ let response request =
 *)
 
 
-
-type row = {
-
-  id: int;
-  name: string;
-  mutable count: int;
-}
-(*let display_id request row = 
-  let open Tyxml.Html in 
-  let json_id = "{\"id\": " ^ Int.to_string row.id ^ "}" in
-    div ~a:[
-      Unsafe.string_attrib "hx-post" "/count"; 
-      Unsafe.string_attrib "hx-swap" "outerHTML";
-      Unsafe.string_attrib "hx-vals" json_id;
-      a_class["count"]] 
-    [ Tyxml.Html.Unsafe.data (Dream.csrf_tag request);
-      input ~a:[ a_hidden(); a_name "id"; a_value (Int.to_string row.id)] ();
-      txt (Int.to_string row.count)]
-*)  
-
-let display_id request row = 
-  let open Tyxml.Html in 
-  form
-      ~a:[
-      Unsafe.string_attrib "hx-post" "/count"; 
-      Unsafe.string_attrib "hx-swap" "outerHTML";
-      Unsafe.string_attrib "hx-trigger" "click";
-      a_class["count"]] 
-    [ Tyxml.Html.Unsafe.data (Dream.csrf_tag request);
-      input ~a:[ a_hidden(); a_name "id"; a_value (Int.to_string row.id)] ();
-      txt (Int.to_string row.count)]
-  
-
-
-
-let display_row request row =
-
-  let open Tyxml.Html in
-
-  div [
-    div ~a:[a_class["id"]] [txt (Int.to_string row.id)];
-    div ~a:[a_class["name"]] [txt row.name];
-    display_id request row]
-;;
-
-
-let response2 _ =
-  let open Tyxml in
-  let ocaml = Html.(a ~a:[a_href "ocaml.org"] [txt "OCaml!"]) in
-  Dream.html @@ elt_to_string ocaml
-;;
-
-let get_port () =  
-  try int_of_string (Sys.getenv "PORT")
-  
-  with
-  | Not_found -> 3000 
-;;
-
-
-let display_list request list =
-  let open Tyxml.Html in
-  div ~a:[a_class["list"]] (List.map (display_row request) list)
-;;
-
-let index request list =
-  let open Tyxml.Html in
-  html
-    (head 
-      (title (txt "Greeting")) 
-      [ script ~a:[a_src "https://unpkg.com/htmx.org@1.9.4"] (txt "")])
-    (body [display_list request list])
-;;
-
-
-let () = 
-
-(*  let _ = create_todo "First ToDo!" in
-  let _ = create_todo "And Another One!" in *)
-
-  let data = ref [
-
-    {name = "foo1"; count = 1; id = 1};
-    {name = "foo2"; count = 1; id = 2};
-    {name = "foo3"; count = 1; id = 3};
-    {name = "foo4"; count = 1; id = 4};
-    {name = "foo5"; count = 1; id = 5};
-    {name = "foo6"; count = 1; id = 6};
-    {name = "foo7"; count = 1; id = 7};
-    {name = "foo8"; count = 1; id = 8};
-    {name = "foo9"; count = 1; id = 9};
-    {name = "foo10"; count = 1; id = 10}
-
-  ] in
-
-  Dream.run ~interface:"0.0.0.0" ~port:( get_port() )
-  (*Dream.run ~port:42069*)
-  @@ Dream.logger
-  @@ Dream.memory_sessions
-  @@ Dream.router [
-
-    Dream.get "/" (fun request -> Dream.html @@ elt_to_string @@ index request !data);
-    Dream.post "/count" (fun request -> 
-
-      let open Lwt.Syntax in
-      let* form = Dream.form (*~csrf:false*) request in
-      (match form with 
-        | `Ok [("id", id)] -> 
-                
-          let item_o = try Some( List.find (fun item -> item.id = int_of_string id ) !data ) with Not_found -> None in
-          (match item_o with
-            | None -> Dream.empty `Not_Found
-            | Some item -> 
-              item.count <- item.count + 1;
-              Dream.html @@ elt_to_string @@ (display_id request item)
-          )
-        | _ -> Dream.empty `Bad_Request
-      )
-    )
-
 (*
      Dream.get "/" (fun _ -> get_todos())
     (*[ Dream.get "/" (fun _ -> html @@ elt_to_string @@ get_todos())*)
@@ -252,6 +282,3 @@ let () =
           | Some id -> handle_delete_todo id
           | _ -> Dream.empty `Bad_Request))
 *)
-    ; Dream.post "/echo"(fun _ -> response2())
-    ]
-;;
