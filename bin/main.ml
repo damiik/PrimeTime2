@@ -17,19 +17,26 @@ let body_class =["bg-stone-700"; "text-yellow-400"; "text-xl"; "font-['Nunito_Sa
 let grid_class =["bg-stone-900"; "grid";"grid-cols-4";"gap-4";"p-6"]
 
 let del_icon =
-  let open Tyxml.Html in
-  svg ~a:[Tyxml.Svg.a_fill `CurrentColor; Tyxml.Svg.a_viewBox (0.0, 0.0, 20.0, 16.0);Tyxml.Svg.a_width (24.0, Some `Pt); Tyxml.Svg.a_height (16.0, Some `Pt)]  (* ~a:[a_svg_ns; a_width 100; a_height 100;a_class ["w-3";"h-3";"text-white";"mr-2"] a_aria "hidden";*)
+  let open Tyxml.Svg in
+  Tyxml.Html.svg ~a:[a_fill `None; a_viewBox (-10.0, -20.0, 80.0, 120.0); a_width (20.0, Some `Pt); a_height (24.0, Some `Pt);
+    a_stroke `CurrentColor; a_stroke_width (8.0, Some `Pt); a_stroke_linecap `Round; a_stroke_linejoin `Round
+  ]  (* ~a:[a_svg_ns; a_width 100; a_height 100;a_class ["w-3";"h-3";"text-white";"mr-2"] a_aria "hidden";*)
   [ 
-    Tyxml.Svg.path ~a:[Tyxml.Svg.a_d "m10.036 8.278 9.258-7.79A1.979 1.979 0 0 0 18 0H2A1.987 1.987 0 0 0 .641.541l9.395 7.737Z"][];
-    Tyxml.Svg.path ~a:[Tyxml.Svg.a_d "M11.241 9.817c-.36.275-.801.425-1.255.427-.428 0-.845-.138-1.187-.395L0 2.6V14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V2.5l-8.759 7.317Z"][]
+    path ~a:[a_d "M -0.66145875,-3.9687501 H 72.098958"][];
+    path ~a:[a_d "m 23.332953,-7.9954656 -0.006,-5.2337014 4.454297,-3.96875 h 17.197899 l 3.968767,3.96875 v 5.2916684"] [];
+    path ~a:[a_d "m 0,6.614579 h 72.760417 l -13.22917,85.98959 h -46.30208 z"] [];
+    path ~a:[a_d "m 26.458333,39.6875 19.84375,19.843752"] [];
+    path ~a:[a_d "M 46.302083,39.6875 26.458333,59.531252"] []
   ]
 
 let update_icon = 
-  let open Tyxml.Html in
-  svg ~a:[Tyxml.Svg.a_fill `CurrentColor; Tyxml.Svg.a_viewBox (0.0, 0.0, 100.0, 100.0);Tyxml.Svg.a_width (24.0, Some `Pt); Tyxml.Svg.a_height (16.0, Some `Pt)]  (* ~a:[a_svg_ns; a_width 100; a_height 100;a_class ["w-3";"h-3";"text-white";"mr-2"] a_aria "hidden";*)
+  let open Tyxml.Svg in
+  Tyxml.Html.svg ~a:[a_fill `CurrentColor; a_viewBox (0.0, 0.0, 100.0, 100.0);a_width (24.0, Some `Pt); a_height (16.0, Some `Pt);
+    a_stroke `CurrentColor; a_stroke_width (2.0, Some `Pt); a_stroke_linecap `Round; a_stroke_linejoin `Round
+  ]  (* ~a:[a_svg_ns; a_width 100; a_height 100;a_class ["w-3";"h-3";"text-white";"mr-2"] a_aria "hidden";*)
   [ 
-    Tyxml.Svg.path ~a:[Tyxml.Svg.a_d "M77.926,94.924H8.217C6.441,94.924,5,93.484,5,91.706V21.997c0-1.777,1.441-3.217,3.217-3.217h34.854 c1.777,0,3.217,1.441,3.217,3.217s-1.441,3.217-3.217,3.217H11.435v63.275h63.274V56.851c0-1.777,1.441-3.217,3.217-3.217 c1.777,0,3.217,1.441,3.217,3.217v34.855C81.144,93.484,79.703,94.924,77.926,94.924z"][];
-    Tyxml.Svg.path ~a:[Tyxml.Svg.a_d "M94.059,16.034L84.032,6.017c-1.255-1.255-3.292-1.255-4.547,0l-9.062,9.073L35.396,50.116 c-0.29,0.29-0.525,0.633-0.686,1.008l-7.496,17.513c-0.526,1.212-0.247,2.617,0.676,3.539c0.622,0.622,1.437,0.944,2.274,0.944 c0.429,0,0.858-0.086,1.276-0.257l17.513-7.496c0.375-0.161,0.719-0.397,1.008-0.686l35.026-35.026l9.073-9.062 C95.314,19.326,95.314,17.289,94.059,16.034z M36.286,63.79l2.928-6.821l3.893,3.893L36.286,63.79z M46.925,58.621l-5.469-5.469 L73.007,21.6l5.47,5.469L46.925,58.621z M81.511,24.034l-5.469-5.469l5.716-5.716l5.469,5.459L81.511,24.034z"][]
+    path ~a:[a_d "M77.926,94.924H8.217C6.441,94.924,5,93.484,5,91.706V21.997c0-1.777,1.441-3.217,3.217-3.217h34.854 c1.777,0,3.217,1.441,3.217,3.217s-1.441,3.217-3.217,3.217H11.435v63.275h63.274V56.851c0-1.777,1.441-3.217,3.217-3.217 c1.777,0,3.217,1.441,3.217,3.217v34.855C81.144,93.484,79.703,94.924,77.926,94.924z"][];
+    path ~a:[a_d "M94.059,16.034L84.032,6.017c-1.255-1.255-3.292-1.255-4.547,0l-9.062,9.073L35.396,50.116 c-0.29,0.29-0.525,0.633-0.686,1.008l-7.496,17.513c-0.526,1.212-0.247,2.617,0.676,3.539c0.622,0.622,1.437,0.944,2.274,0.944 c0.429,0,0.858-0.086,1.276-0.257l17.513-7.496c0.375-0.161,0.719-0.397,1.008-0.686l35.026-35.026l9.073-9.062 C95.314,19.326,95.314,17.289,94.059,16.034z M36.286,63.79l2.928-6.821l3.893,3.893L36.286,63.79z M46.925,58.621l-5.469-5.469 L73.007,21.6l5.47,5.469L46.925,58.621z M81.511,24.034l-5.469-5.469l5.716-5.716l5.469,5.459L81.511,24.034z"][]
   ]
 
 let head_el = 
@@ -53,15 +60,14 @@ let head_el =
         }");
         style [
           txt "
-                  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap');
-                  @import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz@6..12&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz@6..12&display=swap');
 
-                  .scrolling-sidebar {
-                    height: calc(100vh - 2rem); /* Adjust the height as needed */
-                    overflow-y: auto;
-                    position: fixed;
-                  }";
-                  
+          .scrolling-sidebar {
+            height: calc(100vh - 2rem); /* Adjust the height as needed */
+            overflow-y: auto;
+            position: fixed;
+          }";
         ]
       ]
     )
@@ -92,6 +98,9 @@ let sidebar_el =
 
 let elt_to_string elt = Fmt.str "%a" (Tyxml.Html.pp_elt()) elt
 
+let find_data key m =
+  List.find_map (fun (header, data) ->
+    if (header = key) then Some data else None) m
 
 type record_t = {
 
@@ -102,44 +111,57 @@ type record_t = {
 
 let edit_form request row = 
   let open Tyxml.Html in 
-  form
-      ~a:[
-
+  let vals = Printf.sprintf "{\"row_id\":\"%d\",\"dream.csrf\":\"%s\"}" row.id (Dream.csrf_token request) in
+  
+  (*Dream.log "%s" vals;*)
+  div [
+    (textarea ~a:[
+      a_name "edit_text"; a_id (Printf.sprintf "edit_text%d" row.id); a_class ["shadow_inner";"w-full";"bg-stone-800"];
       Unsafe.string_attrib "hx-post" "/line_update";
       Unsafe.string_attrib "hx-swap" "outerHTML";
-      (*Unsafe.string_attrib "hx-headers" "Content-Type: application/json";
-      Unsafe.string_attrib "hx-params" (Printf.sprintf "{id:%d; data:%s}" row.id row.data);*)
-      Unsafe.string_attrib "hx-target" "closest .row_class"; (*row_class is a css class for main div with whole record row, as a target this div will be deleted, this could be #id as well *)
-      Unsafe.string_attrib "hx-trigger" "submit";   
+      Unsafe.string_attrib "hx-target" "closest .row_class"; (*closest parent element*) 
+      Unsafe.string_attrib "hx-trigger" "keyup changed delay:20s";   
+      Unsafe.string_attrib "hx-vals" vals;
+      Unsafe.string_attrib "hx-include" (Printf.sprintf "#edit_text%d" row.id);
+      Unsafe.uri_attrib "dream.csrf" (Dream.csrf_tag request); 
+    ] (txt row.data));
+    div ~a:[ a_class["w-full";"flex"; "flex-grow"; "flex-row"; "space-x-1"]] [
+      form
+        ~a:[
 
-      a_class["count"]] 
-    [ Tyxml.Html.Unsafe.data (Dream.csrf_tag request);
-      input ~a:[ a_hidden(); a_name "row_id"; a_value (Int.to_string row.id)] ();
-      (*txt row.data;*)
-      (textarea ~a:[a_name "edit_text";a_style "background:#222222; width: -webkit-fill-available;"] (txt row.data));
-      button ~a:[
-        a_button_type `Submit;
-        a_class button_class
-      ] [update_icon; txt "Update"];
+        Unsafe.string_attrib "hx-post" "/line_update";
+        Unsafe.string_attrib "hx-swap" "outerHTML";
+        (*Unsafe.string_attrib "hx-headers" "Content-Type: application/json";
+        Unsafe.string_attrib "hx-params" (Printf.sprintf "{id:%d; data:%s}" row.id row.data);*)
+        Unsafe.string_attrib "hx-target" "closest .row_class"; (*closest parent element*) (*row_class is a css class for main div with whole record row, as a target this div will be deleted, this could be #id as well *)
+        Unsafe.string_attrib "hx-trigger" "submit";   
+        Unsafe.string_attrib "hx-vals" "{\"state\":\"MT\"}";
+        Unsafe.string_attrib "hx-include" (Printf.sprintf "#edit_text%d" row.id);
+        (*a_class["count"]*)] 
+      [ Tyxml.Html.Unsafe.data (Dream.csrf_tag request);
+        input ~a:[ a_hidden(); a_name "row_id"; a_value (Int.to_string row.id)] ();
+        (*txt row.data;*)
+        button ~a:[
+          a_button_type `Submit;
+          a_class button_class
+        ] [update_icon; txt "Update"];
+      ];
+      form
+      ~a:[
+
+        Unsafe.string_attrib "hx-delete" "/delete";
+        Unsafe.string_attrib "hx-swap" "outerHTML";
+        Unsafe.string_attrib "hx-target" "closest .row_class"; (*row_class is a css class for main div with whole record row, as a target this div will be deleted, this could be #id as well *)
+        Unsafe.string_attrib "hx-trigger" "click";
+        a_class["delete"] ]
+      [
+        Tyxml.Html.Unsafe.data (Dream.csrf_tag request);
+        input ~a:[a_hidden (); a_name "row_id"; a_value (Int.to_string row.id)] (); (*hidden form element with name "row_id" takes value with row id*)
+        button ~a:[a_class button_class] [del_icon; txt "Del"];
+        (*input ~a:[a_name "row_button"; a_value(Int.to_string row.id)] ()*) 
+      ] 
     ]
-
-let delete_form request row = 
-  let open Tyxml.Html in 
-  
-  form
-    ~a:[
-
-      Unsafe.string_attrib "hx-delete" "/delete";
-      Unsafe.string_attrib "hx-swap" "outerHTML";
-      Unsafe.string_attrib "hx-target" "closest .row_class"; (*row_class is a css class for main div with whole record row, as a target this div will be deleted, this could be #id as well *)
-      Unsafe.string_attrib "hx-trigger" "click";
-      a_class["delete"] ]
-    [
-      Tyxml.Html.Unsafe.data (Dream.csrf_tag request);
-      input ~a:[a_hidden (); a_name "row_id"; a_value (Int.to_string row.id)] (); (*hidden form element with name "row_id" takes value with row id*)
-      button ~a:[a_class button_class] [del_icon; txt "Del"];
-      (*input ~a:[a_name "row_button"; a_value(Int.to_string row.id)] ()*) 
-    ]
+  ]
 
 
 let display_id request row = 
@@ -149,7 +171,7 @@ let display_id request row =
       Unsafe.string_attrib "hx-post" "/edit"; 
       Unsafe.string_attrib "hx-swap" "outerHTML";
       Unsafe.string_attrib "hx-trigger" "click";
-      a_class["count"]] 
+      (*a_class["count"]*)] 
     [ Tyxml.Html.Unsafe.data (Dream.csrf_tag request);
       input ~a:[ a_hidden(); a_name "row_id"; a_value (Int.to_string row.id)] ();
       txt row.data]
@@ -165,7 +187,7 @@ let display_row request row =
     (*div ~a:[a_class["row_id"]] [txt (Int.to_string row.id)];*)
     div ~a:[a_class["name"]] [txt row.name];
     display_id request row;
-    delete_form request row]
+    ]
 ;;
 
 let index request list =
@@ -251,18 +273,19 @@ let () =
       let* form = Dream.form request in
       match form with
         | `Ok form_data -> (*  [("row_id", "1"); ("edit_text", "....")]  *) 
-          (match 
-            (List.filter (fun (p1, _) -> p1 = "row_id") form_data, List.filter (fun (p1, _) -> p1 = "edit_text") form_data) with
-            | ([(_,id)], [(_, txt)]) -> 
+          (match (find_data "row_id" form_data, find_data "edit_text" form_data) with 
+            | (Some id, Some txt) ->
                  let item_o = try Some( List.find (fun item -> item.id = int_of_string id ) !data ) with Not_found -> None in
                  (match item_o with
                     | None -> Dream.empty `Not_Found
                     | Some item -> 
                       item.data <- txt;
                       Dream.html @@ elt_to_string @@ display_row request item)
-            | _ -> Dream.empty `OK)
+            | _ -> 
+              Dream.log "??Dream: Request data not match with <row_id> and <edit_text> parameters!\n";
+              Dream.empty `OK)
         | _ ->
-          Dream.log "Dream run  ??\n";
+          Dream.log "??Dream: Request data not match with <`OK form_data>!\n";
       Dream.empty `OK 
     )
 
@@ -284,7 +307,8 @@ let () =
     ; Dream.get "/end"(fun _ -> exit 0;)
     ]
 ;;
-
+(*<button hx-trigger="click, keyup[altKey&&shiftKey&&key=='D'] from:body"
+        hx-post="/doit">Do It! (alt-shift-D)</button>*)
 
 (*
 let response2 _ =
