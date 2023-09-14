@@ -102,16 +102,25 @@ let find_data key m =
   List.find_map (fun (header, data) ->
     if (header = key) then Some data else None) m
 
+type kind_of_record_t =  Text | RawHtml
+
+
 type record_t = {
 
   id: int;
   name: string;
+  kind_of: kind_of_record_t;
   mutable data: string;
 }
+let kind_options = ["Text"; "RawHtml"]
+let kind_s k = match k with | Text -> "Text" | RawHtml -> "RawHtml"
+
 
 let edit_form request row = 
   let open Tyxml.Html in 
   let vals = Printf.sprintf "{\"row_id\":\"%d\",\"dream.csrf\":\"%s\"}" row.id (Dream.csrf_token request) in
+
+
   
   (*Dream.log "%s" vals;*)
   div [
@@ -126,40 +135,34 @@ let edit_form request row =
       Unsafe.uri_attrib "dream.csrf" (Dream.csrf_tag request); 
     ] (txt row.data));
     div ~a:[ a_class["w-full";"flex"; "flex-grow"; "flex-row"; "space-x-1"]] [
-      form
+      button
         ~a:[
-
         Unsafe.string_attrib "hx-post" "/line_update";
         Unsafe.string_attrib "hx-swap" "outerHTML";
         (*Unsafe.string_attrib "hx-headers" "Content-Type: application/json";
         Unsafe.string_attrib "hx-params" (Printf.sprintf "{id:%d; data:%s}" row.id row.data);*)
         Unsafe.string_attrib "hx-target" "closest .row_class"; (*closest parent element*) (*row_class is a css class for main div with whole record row, as a target this div will be deleted, this could be #id as well *)
-        Unsafe.string_attrib "hx-trigger" "submit";   
-        Unsafe.string_attrib "hx-vals" "{\"state\":\"MT\"}";
+        Unsafe.string_attrib "hx-trigger" "click";   
+        Unsafe.string_attrib "hx-vals" vals;
         Unsafe.string_attrib "hx-include" (Printf.sprintf "#edit_text%d" row.id);
-        (*a_class["count"]*)] 
-      [ Tyxml.Html.Unsafe.data (Dream.csrf_tag request);
-        input ~a:[ a_hidden(); a_name "row_id"; a_value (Int.to_string row.id)] ();
-        (*txt row.data;*)
-        button ~a:[
-          a_button_type `Submit;
-          a_class button_class
-        ] [update_icon; txt "Update"];
-      ];
-      form
+        Unsafe.uri_attrib "dream.csrf" (Dream.csrf_tag request); 
+        a_class button_class
+        ] 
+        [update_icon; txt "Update"];
+      button
       ~a:[
 
         Unsafe.string_attrib "hx-delete" "/delete";
         Unsafe.string_attrib "hx-swap" "outerHTML";
         Unsafe.string_attrib "hx-target" "closest .row_class"; (*row_class is a css class for main div with whole record row, as a target this div will be deleted, this could be #id as well *)
         Unsafe.string_attrib "hx-trigger" "click";
-        a_class["delete"] ]
-      [
-        Tyxml.Html.Unsafe.data (Dream.csrf_tag request);
-        input ~a:[a_hidden (); a_name "row_id"; a_value (Int.to_string row.id)] (); (*hidden form element with name "row_id" takes value with row id*)
-        button ~a:[a_class button_class] [del_icon; txt "Del"];
-        (*input ~a:[a_name "row_button"; a_value(Int.to_string row.id)] ()*) 
-      ] 
+        Unsafe.string_attrib "hx-vals" vals;
+        a_class button_class 
+      ]
+      [del_icon; txt "Del";];
+      select ~a:[a_class button_class
+
+      ] (List.map (fun op -> option ~a:(if op = (kind_s row.kind_of) then [a_value op; a_selected ()] else [a_value op]) (txt op)) kind_options)
     ]
   ]
 
@@ -228,12 +231,12 @@ let () =
 
   let data = ref [
 
-    {name = "foo1"; data = "Zapytania HTTP mogą być generowane z dowolnych elementów (nie tylko z <a> lub <form>)"; id = 1};
-    {name = "foo2"; data = "Zapytania HTTP mogą być genrewane przez dowolne zdarzenia (nie tylko przez \"click\" i \"submit\")"; id = 2};
-    {name = "foo3"; data = "Dostępne są wszystkie metody AJAX (nie tylko POST i GET ale również PUT, PATCH, DELETE)"; id = 3};
-    {name = "foo4"; data = "Zastępowana może być dowolna część dokumentu HTML (nie cały dokument)"; id = 4};
-    {name = "foo5"; data = "Strony mogą być przeładowywane bez ponownego wczytywania nagłówków (a więc css'ów, fontów itp)."; id = 5};
-    {name = "foo6"; data = "Ogólnie idea jest taka, żeby odświeżać tylko elementy strony które wymagają odświeżenia"; id = 6};
+    {name = "foo1"; kind_of = Text; data = "Zapytania HTTP mogą być generowane z dowolnych elementów (nie tylko z <a> lub <form>)"; id = 1};
+    {name = "foo2"; kind_of = Text; data = "Zapytania HTTP mogą być genrewane przez dowolne zdarzenia (nie tylko przez \"click\" i \"submit\")"; id = 2};
+    {name = "foo3"; kind_of = Text; data = "Dostępne są wszystkie metody AJAX (nie tylko POST i GET ale również PUT, PATCH, DELETE)"; id = 3};
+    {name = "foo4"; kind_of = Text; data = "Zastępowana może być dowolna część dokumentu HTML (nie cały dokument)"; id = 4};
+    {name = "foo5"; kind_of = Text; data = "Strony mogą być przeładowywane bez ponownego wczytywania nagłówków (a więc css'ów, fontów itp)."; id = 5};
+    {name = "foo6"; kind_of = RawHtml; data = "Ogólnie idea jest taka, żeby odświeżać tylko elementy strony które wymagają odświeżenia"; id = 6};
 
   ] in
 
