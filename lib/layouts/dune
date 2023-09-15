@@ -1,0 +1,6 @@
+(library
+ (name layouts)
+ (libraries dream tyxml base str)
+ (modules head sidebar)
+ (public_name layouts)
+)

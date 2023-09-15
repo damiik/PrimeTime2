@@ -1,99 +1,5 @@
-
-(*open Base*)
-(* open Dream *)
-(* open Lwt.Syntax *)
-(* open Lwt.Infix *)
-(* open Tyxml.Html *)
-(* open Str *)
-
-
-(* ocamlfind ocamlopt -thread -c -package base,str,dream,tyxml main.ml -linkpkg -o ./main.bytes *)
-(* dune exec PrimeTime2 *)
-
-let button_class = ["bg-green-800"; "hover:shadow none";"border-green-900";"border";"p-2";"m-3";"rounded";"shadow-lg";"shadow-[#020203]"] 
-
-let body_class =["bg-stone-700"; "text-yellow-400"; "text-xl"; "font-['Nunito_Sans']" ] 
-
-let grid_class =["bg-stone-900"; "grid";"grid-cols-4";"gap-4";"p-6"]
-
-let del_icon =
-  let open Tyxml.Svg in
-  Tyxml.Html.svg ~a:[a_fill `None; a_viewBox (-10.0, -20.0, 80.0, 120.0); a_width (20.0, Some `Pt); a_height (24.0, Some `Pt);
-    a_stroke `CurrentColor; a_stroke_width (8.0, Some `Pt); a_stroke_linecap `Round; a_stroke_linejoin `Round
-  ]  (* ~a:[a_svg_ns; a_width 100; a_height 100;a_class ["w-3";"h-3";"text-white";"mr-2"] a_aria "hidden";*)
-  [ 
-    path ~a:[a_d "M -0.66145875,-3.9687501 H 72.098958"][];
-    path ~a:[a_d "m 23.332953,-7.9954656 -0.006,-5.2337014 4.454297,-3.96875 h 17.197899 l 3.968767,3.96875 v 5.2916684"] [];
-    path ~a:[a_d "m 0,6.614579 h 72.760417 l -13.22917,85.98959 h -46.30208 z"] [];
-    path ~a:[a_d "m 26.458333,39.6875 19.84375,19.843752"] [];
-    path ~a:[a_d "M 46.302083,39.6875 26.458333,59.531252"] []
-  ]
-
-let update_icon = 
-  let open Tyxml.Svg in
-  Tyxml.Html.svg ~a:[a_fill `CurrentColor; a_viewBox (0.0, 0.0, 100.0, 100.0);a_width (24.0, Some `Pt); a_height (16.0, Some `Pt);
-    a_stroke `CurrentColor; a_stroke_width (2.0, Some `Pt); a_stroke_linecap `Round; a_stroke_linejoin `Round
-  ]  (* ~a:[a_svg_ns; a_width 100; a_height 100;a_class ["w-3";"h-3";"text-white";"mr-2"] a_aria "hidden";*)
-  [ 
-    path ~a:[a_d "M77.926,94.924H8.217C6.441,94.924,5,93.484,5,91.706V21.997c0-1.777,1.441-3.217,3.217-3.217h34.854 c1.777,0,3.217,1.441,3.217,3.217s-1.441,3.217-3.217,3.217H11.435v63.275h63.274V56.851c0-1.777,1.441-3.217,3.217-3.217 c1.777,0,3.217,1.441,3.217,3.217v34.855C81.144,93.484,79.703,94.924,77.926,94.924z"][];
-    path ~a:[a_d "M94.059,16.034L84.032,6.017c-1.255-1.255-3.292-1.255-4.547,0l-9.062,9.073L35.396,50.116 c-0.29,0.29-0.525,0.633-0.686,1.008l-7.496,17.513c-0.526,1.212-0.247,2.617,0.676,3.539c0.622,0.622,1.437,0.944,2.274,0.944 c0.429,0,0.858-0.086,1.276-0.257l17.513-7.496c0.375-0.161,0.719-0.397,1.008-0.686l35.026-35.026l9.073-9.062 C95.314,19.326,95.314,17.289,94.059,16.034z M36.286,63.79l2.928-6.821l3.893,3.893L36.286,63.79z M46.925,58.621l-5.469-5.469 L73.007,21.6l5.47,5.469L46.925,58.621z M81.511,24.034l-5.469-5.469l5.716-5.716l5.469,5.459L81.511,24.034z"][]
-  ]
-
-let head_el = 
-  let open Tyxml.Html in
-    (head 
-      (title (txt "Greeting")) 
-      [ script ~a:[a_src "https://unpkg.com/htmx.org@1.9.4"] (txt "");
-        script ~a:[a_src "https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"] (txt "");
-        script (txt "
-        tailwind.config = {
-          theme: {
-            extend: {
-              colors: {
-                clifford: '#da373d',
-                'stone': {
-                  850: '#23201E'
-                }
-              }
-            }
-          }
-        }");
-        style [
-          txt "
-          @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap');
-          @import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz@6..12&display=swap');
-
-          .scrolling-sidebar {
-            height: calc(100vh - 2rem); /* Adjust the height as needed */
-            overflow-y: auto;
-            position: fixed;
-          }";
-        ]
-      ]
-    )
-
-
-let sidebar_el = 
-  let open Tyxml.Html in
-  div ~a:[
-    a_class["bg-stone-850";"text-white";"col-span-1"];
-  ][
-    div ~a:[a_class["p-4";"scrolling-sidebar"];] [
-      (h1 ~a:[a_class["text-2xl";"font-semibold"]] [txt "Sidebar"]);
-      ul ~a:[a_class ["mt-4"]] [
-        li ~a:[a_class ["mb-2"]] [a ~a:[a_href "#"; a_class ["hover:text-lime-600"]][txt "Dashboard"]];
-        li ~a:[a_class ["mb-2"]] [a ~a:[a_href "#"; a_class ["hover:text-lime-600"]][txt "Products"]];
-        li ~a:[a_class ["mb-2"]] [a ~a:[a_href "#"; a_class ["hover:text-lime-600"]][txt "Customers"]];
-        li ~a:[a_class ["mb-2"]] [a ~a:[a_href "#"; a_class ["hover:text-lime-600"]][txt "Orders"]];
-        li ~a:[a_class ["mb-2"]] [a ~a:[a_href "#"; a_class ["hover:text-lime-600"]][txt "Settings22"]];
-        li ~a:[a_class ["mb-2"]] [a ~a:[a_href "#"; a_class ["hover:text-lime-600"]][txt "Dashboard"]];
-        li ~a:[a_class ["mb-2"]] [a ~a:[a_href "#"; a_class ["hover:text-lime-600"]][txt "Products"]];
-        li ~a:[a_class ["mb-2"]] [a ~a:[a_href "#"; a_class ["hover:text-lime-600"]][txt "Customers"]];
-        li ~a:[a_class ["mb-2"]] [a ~a:[a_href "#"; a_class ["hover:text-lime-600"]][txt "Orders"]];
-        li ~a:[a_class ["mb-2"]] [a ~a:[a_href "#"; a_class ["hover:text-lime-600"]][txt "Settings22"]]
-      ]
-    ]
-  ]
+open Cool_lib (* modules: Styles, Icons *)
+open Layouts  (* modules: Sidebard, Head *)
 
 
 let elt_to_string elt = Fmt.str "%a" (Tyxml.Html.pp_elt()) elt
@@ -125,7 +31,7 @@ let edit_form request row =
   (*Dream.log "%s" vals;*)
   div [
     (textarea ~a:[
-      a_name "edit_text"; a_id (Printf.sprintf "edit_text%d" row.id); a_class ["shadow_inner";"w-full";"bg-stone-800"];
+      a_name "edit_text"; a_id (Printf.sprintf "edit_text%d" row.id); a_class Styles.edit_text_class;
       Unsafe.string_attrib "hx-post" "/line_update";
       Unsafe.string_attrib "hx-swap" "outerHTML";
       Unsafe.string_attrib "hx-target" "closest .row_class"; (*closest parent element*) 
@@ -146,9 +52,9 @@ let edit_form request row =
         Unsafe.string_attrib "hx-vals" vals;
         Unsafe.string_attrib "hx-include" (Printf.sprintf "#edit_text%d" row.id);
         Unsafe.uri_attrib "dream.csrf" (Dream.csrf_tag request); 
-        a_class button_class
+        a_class Styles.button_class
         ] 
-        [update_icon; txt "Update"];
+        [Icons.update_icon; txt "Update"];
       button
       ~a:[
 
@@ -157,10 +63,10 @@ let edit_form request row =
         Unsafe.string_attrib "hx-target" "closest .row_class"; (*row_class is a css class for main div with whole record row, as a target this div will be deleted, this could be #id as well *)
         Unsafe.string_attrib "hx-trigger" "click";
         Unsafe.string_attrib "hx-vals" vals;
-        a_class button_class 
+        a_class Styles.button_class 
       ]
-      [del_icon; txt "Del";];
-      select ~a:[a_class button_class
+      [Icons.del_icon; txt "Del";];
+      select ~a:[a_class Styles.button_class
 
       ] (List.map (fun op -> option ~a:(if op = (kind_s row.kind_of) then [a_value op; a_selected ()] else [a_value op]) (txt op)) kind_options)
     ]
@@ -195,12 +101,12 @@ let display_row request row =
 
 let index request list =
   let open Tyxml.Html in
-  html head_el
-    (body ~a:[a_class body_class] [
+  html Head.el
+    (body ~a:[a_class Styles.body_class] [
       
-      div ~a:[a_class grid_class]  [
+      div ~a:[a_class Styles.grid_class]  [
           
-        sidebar_el;
+        Sidebar.el;
         main ~a:[a_class ["col-span-3";"p-6";"rounded";"shadow"]] [
             
           div ~a:[a_class["list"]] (List.map (display_row request) list)

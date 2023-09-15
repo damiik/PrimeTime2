@@ -1,2 +1,6 @@
 (library
- (name PrimeTime2))
+ (name cool_lib)
+ (libraries dream tyxml base str)
+ (modules icons styles)
+ (public_name cool_lib)
+)
