@@ -34,4 +34,9 @@
  (depends ocaml dune base str dream tyxml)
  (version 1.0)
 )
+(package
+ (name html_parser)
+ (depends ocaml dune base str tyxml)
+ (version 1.0)
+)
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project

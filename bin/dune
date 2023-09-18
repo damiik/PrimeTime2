@@ -1,7 +1,7 @@
 (executable
  (public_name PrimeTime2)
  (name main)
- (libraries cool_lib layouts dream tyxml base str)
+ (libraries cool_lib layouts html_parser dream tyxml base str)
  (package PrimeTime2) 
 )
 

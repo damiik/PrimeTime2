@@ -1,5 +1,7 @@
 open Cool_lib (* modules: Styles, Icons *)
 open Layouts  (* modules: Sidebard, Head *)
+open Html_parser
+
 
 
 let elt_to_string elt = Fmt.str "%a" (Tyxml.Html.pp_elt()) elt
@@ -8,7 +10,7 @@ let find_data key m =
   List.find_map (fun (header, data) ->
     if (header = key) then Some data else None) m
 
-type kind_of_record_t =  Text | RawHtml
+type kind_of_record_t =  Article | Paragraph | Text | RawHtml
 
 
 type record_t = {
@@ -17,17 +19,20 @@ type record_t = {
   name: string;
   kind_of: kind_of_record_t;
   mutable data: string;
+  childs: int list;
 }
-let kind_options = ["Text"; "RawHtml"]
-let kind_s k = match k with | Text -> "Text" | RawHtml -> "RawHtml"
+let kind_options = ["Article"; "Text"; "RawHtml"]
+let kind_s k = match k with 
+  | Article -> "Article"
+  | Paragraph -> "Paragraph"
+  | Text -> "Text" 
+  | RawHtml -> "RawHtml"
 
 
 let edit_form request row = 
   let open Tyxml.Html in 
   let vals = Printf.sprintf "{\"row_id\":\"%d\",\"dream.csrf\":\"%s\"}" row.id (Dream.csrf_token request) in
 
-
-  
   (*Dream.log "%s" vals;*)
   div [
     (textarea ~a:[
@@ -71,54 +76,100 @@ let edit_form request row =
       ] (List.map (fun op -> option ~a:(if op = (kind_s row.kind_of) then [a_value op; a_selected ()] else [a_value op]) (txt op)) kind_options)
     ]
   ]
-
-
-let display_id request row = 
-  let open Tyxml.Html in 
-  form
-      ~a:[
-      Unsafe.string_attrib "hx-post" "/edit"; 
-      Unsafe.string_attrib "hx-swap" "outerHTML";
-      Unsafe.string_attrib "hx-trigger" "click";
-      (*a_class["count"]*)] 
-    [ Tyxml.Html.Unsafe.data (Dream.csrf_tag request);
-      input ~a:[ a_hidden(); a_name "row_id"; a_value (Int.to_string row.id)] ();
-      txt row.data]
-;;
+(*
+open Tyxml.Xml
+open Tyxml_html
+open Xml
+  
+let parse_html_string (html_string: string)  =
+    let parser = new XmlParser () in
+    let document = parser#parse_string html_string in
+    let root_element = document#root in
+    cast_element root_element
+*)
 
 let display_row request row =
+  let vals = Printf.sprintf "{\"row_id\":\"%d\",\"dream.csrf\":\"%s\"}" row.id (Dream.csrf_token request) in
+ 
+(*  let tokens : Lexer.token list = Lexer.tokenize {|<h1 style="text-align: center;" name="dupa"><a>abc</a></h1>|} *)
+(*  let tokens : Lexer.token list = Lexer.tokenize {|<h5 style="text-align: left;"><em>👉 </em><span style="color: #236fa1;"><em><a style="color: #236fa1;" title="Obliczenia strat dynamicznych dla mosfet " href="https://www.elektroda.pl/rtvforum/topic3474295.html">Obliczenia strat dynamicznych dla mosfet</a></em></span></h5>|}*)
+ let tokens : Lexer.token list = Lexer.tokenize 
+  {|<div>
+  <h1 style="text-align: center;">***</h1>
+  <h5 style="text-align: left;"><em>👉 </em><span style="color: #236fa1;"><em><a style="color: #236fa1;" title="Obliczenia strat dynamicznych dla mosfet " href="https://www.elektroda.pl/rtvforum/topic3474295.html">Obliczenia strat dynamicznych dla mosfet</a></em></span></h5>
+  <h5 style="text-align: left;"><em>👉 </em><span style="color: #236fa1;"><em><a style="color: #236fa1;" title="LTspice on Linux Ubuntu - How to install and use" href="https://github.com/joaocarvalhoopen/LTSpice_on_Linux_Ubuntu__How_to_install_and_use">LTspice on Linux Ubuntu - How to install and use</a></em></span></h5>
+  <p> </p>
+  <p> </p>
+  </div>
+
+
+|} 
+
+in
+
+  Dream.log "%s" (Lexer.tokensl2str tokens);
+  let _ = match (Array.of_list tokens |> ref) |> Parser.parser_run Parser.element_p with
+    | Ok el  ->
+      Dream.log "\n\n------------------------------\n%s\n------------------------------\n" (Parser.pp el "  " "  ")
+    | _ -> ()
+    in
+
+ 
 
   let open Tyxml.Html in
+  let row_div = if row.kind_of = RawHtml then (txt row.data) else (txt row.data) in
   (*mark this div with css class "row_class", will be needed for remove whole record row, 
     while this is hx-target class /could be #id as weell/ *)
-  div ~a:[a_class ["row_class"]] 
-    [
-    (*div ~a:[a_class["row_id"]] [txt (Int.to_string row.id)];*)
+  div ~a:[a_class ["row_class"]] [
+
     div ~a:[a_class["name"]] [txt row.name];
-    display_id request row;
+    div ~a:[
+      Unsafe.string_attrib "hx-post" "/edit"; 
+      Unsafe.string_attrib "hx-swap" "outerHTML";
+      Unsafe.string_attrib "hx-trigger" "click[ctrlKey]";
+      Unsafe.string_attrib "hx-vals" vals;]
+    [ 
+      (*Tyxml.Html.Unsafe.data (Dream.csrf_tag request);*)
+      row_div
     ]
+  ]
 ;;
 
-let index request list =
+let index request article_id data_ref =
   let open Tyxml.Html in
-  html Head.el
-    (body ~a:[a_class Styles.body_class] [
+  let article_o = try Some( List.find (fun item -> item.id = article_id) !data_ref ) with Not_found -> None in
+  (match article_o with
+    | None -> p [txt "Article not found"]
+    | Some article -> 
+
+    let elements_l = (List.map (fun id -> 
+      let el_o = try Some( List.find (fun item -> item.id = id) !data_ref ) with Not_found -> None in
+      (match el_o with
+        | None -> {name = "root"; kind_of = Paragraph; childs = []; data = "*** Element child not found ***"; id = 7};
+        | Some el ->  el
       
-      div ~a:[a_class Styles.grid_class]  [
+      )
+    ) article.childs) in
+
+    html Head.el
+      (body ~a:[a_class Styles.body_class] [
+      
+        div ~a:[a_class Styles.grid_class]  [
           
-        Sidebar.el;
-        main ~a:[a_class ["col-span-3";"p-6";"rounded";"shadow"]] [
+          Sidebar.el;
+          main ~a:[a_class ["col-span-3";"p-6";"rounded";"shadow"]] [
             
-          div ~a:[a_class["list"]] (List.map (display_row request) list)
+            div ~a:[a_class["list"]] (List.map (display_row request) elements_l)
+          ]
         ]
       ]
-    ]
+    )
   )
 ;;
 
 
 
-let process_row_by_form_id request data ~f =
+let process_record_t request data ~f =
   let open Lwt.Syntax in
   let* form = Dream.form (*~csrf:false*) request in
     (match form with 
@@ -136,13 +187,15 @@ let process_row_by_form_id request data ~f =
 let () = 
 
   let data = ref [
+    {name = "root"; kind_of = Article; childs = [1;2;4;5;6]; data = "This is article about Htmx"; id = 0};
+    {name = "root"; kind_of = Paragraph; childs = []; data = "***"; id = 7};
 
-    {name = "foo1"; kind_of = Text; data = "Zapytania HTTP mogą być generowane z dowolnych elementów (nie tylko z <a> lub <form>)"; id = 1};
-    {name = "foo2"; kind_of = Text; data = "Zapytania HTTP mogą być genrewane przez dowolne zdarzenia (nie tylko przez \"click\" i \"submit\")"; id = 2};
-    {name = "foo3"; kind_of = Text; data = "Dostępne są wszystkie metody AJAX (nie tylko POST i GET ale również PUT, PATCH, DELETE)"; id = 3};
-    {name = "foo4"; kind_of = Text; data = "Zastępowana może być dowolna część dokumentu HTML (nie cały dokument)"; id = 4};
-    {name = "foo5"; kind_of = Text; data = "Strony mogą być przeładowywane bez ponownego wczytywania nagłówków (a więc css'ów, fontów itp)."; id = 5};
-    {name = "foo6"; kind_of = RawHtml; data = "Ogólnie idea jest taka, żeby odświeżać tylko elementy strony które wymagają odświeżenia"; id = 6};
+    {name = "foo1"; kind_of = Text; childs = []; data = "Zapytania HTTP mogą być generowane z dowolnych elementów (nie tylko z <a> lub <form>)"; id = 1};
+    {name = "foo2"; kind_of = Text; childs = []; data = "Zapytania HTTP mogą być genrewane przez dowolne zdarzenia (nie tylko przez \"click\" i \"submit\")"; id = 2};
+    {name = "foo3"; kind_of = Text; childs = []; data = "Dostępne są wszystkie metody AJAX (nie tylko POST i GET ale również PUT, PATCH, DELETE)"; id = 3};
+    {name = "foo4"; kind_of = Text; childs = []; data = "Zastępowana może być dowolna część dokumentu HTML (nie cały dokument)"; id = 4};
+    {name = "foo5"; kind_of = Text; childs = []; data = "Strony mogą być przeładowywane bez ponownego wczytywania nagłówków (a więc css'ów, fontów itp)."; id = 5};
+    {name = "foo6"; kind_of = RawHtml; childs = []; data = "<p>Ogólnie <b>idea</b> jest taka, żeby <i>odświeżać</i> tylko elementy strony które wymagają odświeżenia</p>"; id = 6};
 
   ] in
 
@@ -158,10 +211,10 @@ let () =
   @@ Dream.memory_sessions
   @@ Dream.router [
 
-    Dream.get "/" (fun request -> Dream.html @@ elt_to_string @@ index request !data);
+    Dream.get "/" (fun request -> Dream.html @@ elt_to_string @@ (index request 0 data));
 
     Dream.delete "/delete" (fun request ->
-      process_row_by_form_id request data ~f:(fun item ->
+      process_record_t request data ~f:(fun item ->
         data := List.filter (fun x -> 
           x.id <> item.id) !data;
           Dream.empty `OK
@@ -169,7 +222,7 @@ let () =
     );
 
     Dream.post "/edit" (fun request -> 
-      process_row_by_form_id request data ~f:(fun item ->
+      process_record_t request data ~f:(fun item ->
          
         (*let v = int_of_string item.data in
         item.data <-  Printf.sprintf "%i" (v + 1);*)    

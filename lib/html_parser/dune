@@ -1,0 +1,6 @@
+(library
+ (name html_parser)
+ (libraries tyxml base str)
+ (modules lexer parser)
+ (public_name html_parser)
+)
