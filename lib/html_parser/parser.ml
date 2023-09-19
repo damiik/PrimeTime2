@@ -1,3 +1,6 @@
+(* It is not full Html parser. 
+   It's rather simple basic xml parser. 
+   Just what I need for this application. *)
 
 open Printf
 open Lexer
@@ -99,17 +102,21 @@ let ( <|> ) (p1: 'a parser) (p2: 'a parser): 'a parser = {
     )
     | res1 -> res1
 }
-
+(* don't care of result from left side parser *)
 let ( *> ) (p1: 'a parser) (p2: 'b parser): 'b parser = { run = fun state -> 
   state |> (p1 >>= (fun _ -> p2 >>= (fun b -> return b))).run } (* this last run is run from bind operator >>= *)
+
+(* don't care of result from right side parser *)
 let ( <* ) (p1: 'a parser) (p2: 'b parser): 'a parser = { run = fun state -> 
   state |> (p1 >>= (fun a -> p2 >>= (fun _ -> return a))).run }
+
+(* pair of left and right side will be used *)
 let ( <*> ) (p1: 'a parser) (p2: 'b parser): ('a * 'b) parser  = { run = fun state -> 
   state |> (p1 >>= (fun a -> p2 >>= (fun b -> return (a,b)))).run }
 
 
 
-
+(* this parser is also used as an option parser - always list will be returned (maybe empty)*)
 let zeroOrMore (p:'a parser) : 'a list parser = {
   run = fun state -> 
 
@@ -155,24 +162,19 @@ let is_a (t: token) : bool parser = {
     )
     else 
       state, Error ( sprintf ": Not a %s at: %d [%s] " (t |> token2str) state.token_ix  (token2str !( state.tokens ).( state.token_ix )))
-
 }
 
-let new_line_p: unit parser = ((is_a Tok_NewL) >>= fun _ -> return ())
+type xml_object =
+  | Text_El of string
+  | Tag_El of tag_element
 
-
-
-type 'a element_t =
-  | Nothing_h
-  | Element_h of 'a element_data
-
-and 'a element_data = {
-  value : 'a;
+and tag_element = {
+  name : string;
   attributes : (string * string) list;
-  mutable data : string;
-  mutable childs : 'a element_t list
+  mutable childs : xml_object list
 }
 
+(* name have only letters, digits, '_' and '@' characters *)
 let name_p: string parser = {
   run = fun state -> 
    
@@ -183,6 +185,7 @@ let name_p: string parser = {
       state, Error ( sprintf ": Element name expected but got: %s at: [%d] " (token2str token) state.token_ix)
 }
 
+(* string is everything between "" brackets *)
 let string_p: string parser = {
   run = fun state -> 
    
@@ -190,27 +193,28 @@ let string_p: string parser = {
     | Tok_String l_str -> 
          {state with token_ix = (state.token_ix + 1); }, Ok l_str
     | token -> 
-      state, Error ( sprintf ": Element name expected but got: %s at: [%d] " (token2str token) state.token_ix)
+      state, Error ( sprintf ": Element string expected but got: %s at: [%d] " (token2str token) state.token_ix)
 }
 
-let text_p: string parser = {
+(* text is everyting between '>' and '<' characters *)
+let text_p: xml_object parser = {
   run = fun state -> 
    
     match !( state.tokens ).( state.token_ix ) with (* określić aktualną pozycję jako pole w state lub obliczać później *)
     | Tok_Text l_str -> 
-         {state with token_ix = (state.token_ix + 1); }, Ok l_str
+         {state with token_ix = (state.token_ix + 1); }, Ok (Text_El l_str)
     | token -> 
-      state, Error ( sprintf ": Element name expected but got: %s at: [%d] " (token2str token) state.token_ix)
+      state, Error ( sprintf ": Element data expected but got: %s at: [%d] " (token2str token) state.token_ix)
 }
 
 let attribute_p: (string * string) parser = ( 
   (name_p <* is_a Tok_Equ) <*> string_p >>= 
           fun (n, s) -> return (n,s))
 
-let element_init_p : (string element_t) parser = 
+let element_init_p : xml_object parser = 
   
   (is_a Tok_Less *> (name_p <*> zeroOrMore attribute_p)<* is_a Tok_More >>= 
-    fun (n, l) -> return (Element_h {value = n; data = ""; childs = []; attributes = l}))
+    fun (n, l) -> return (Tag_El {name = n; childs = []; attributes = l}))
 
 
 let element_end_p : unit parser = 
@@ -218,25 +222,27 @@ let element_end_p : unit parser =
     fun (_) -> return ())
 
 (* recursive parser must have this form *)
-let rec element_p : (string element_t) parser = 
+let rec tag_element_p :  xml_object parser = 
   { run = fun state -> 
   state |> (
   element_init_p >>= fun e -> 
-  (zeroOrMore text_p) >>= fun l ->
-  (zeroOrMore element_p) >>= fun ch -> 
+  (*(zeroOrMore text_p) >>= fun l ->*)
+  (zeroOrMore xml_object_p) >>= fun ch -> 
   element_end_p >>= 
     fun _ -> 
-      match (e, l, ch) with 
-      | (Element_h e1, x::_, ch) -> 
-          e1.data <- x; 
+      match (e, ch) with 
+      | (Tag_El e1, ch) -> 
+          (*e1.data <- x; *)
           e1.childs <- ch;
-          return (Element_h e1)
-      | (Element_h e1, [], ch) -> 
-        e1.childs <- ch;
-        return (Element_h e1)
-
-      | (e, _, _) -> return e
+          return (Tag_El e1)
+      | (e, _) -> return e
   ).run
+}
+and xml_object_p : xml_object parser = {
+  run = fun state -> 
+    match state |> text_p.run with
+      | _, Error _ ->  state |> tag_element_p.run  (* don't care about error if have some alternative *)
+      | res1 -> res1
 }
 
 
@@ -248,14 +254,17 @@ let parser_run (p: 'a parser) (t: token array ref): ('a, error) result =
 
 
 
-let rec pp (el : string element_t) (prefix : string) (curr_prefix : string) = 
+let rec pp (el : xml_object) (prefix : string) (curr_prefix : string) = 
   let prefix2 = sprintf "%s%s" prefix curr_prefix in
   let prefix3 = sprintf "%s%s%s" prefix prefix curr_prefix in
   match el with
-    | Element_h el0 ->
-      let attributes_pp = (List.fold_left (fun n (s1,s2) -> sprintf "\n%s%s=%s %s" prefix3 s1 s2 n) "" el0.attributes) in
-      let childs_pp = (List.fold_left (fun n ch -> sprintf "\n%s%s%s" prefix (pp ch prefix prefix2) n) "" el0.childs) in
+    | Tag_El el0 ->
+      let attributes_pp_l = (List.fold_left (fun n (s1,s2) -> sprintf "\n%s%s=\"%s\" %s" prefix3 s1 s2 n) "" el0.attributes) in
+      let childs_pp_l = (List.fold_left (fun n ch -> sprintf "\n%s%s%s" prefix (pp ch prefix prefix2) n) "" el0.childs) in
 
-      sprintf "%s%s\n%sattributes:%s\n%stxt:%s\n%schilds:%s\n" curr_prefix el0.value prefix2 attributes_pp prefix2 (if String.length el0.data > 0 then el0.data else "") prefix2 childs_pp 
+      let attributes_pp = if String.length attributes_pp_l > 0 then sprintf "attributes:%s" attributes_pp_l else "" in
+      let childs_pp = if String.length childs_pp_l > 0 then sprintf "childs:%s" childs_pp_l else "" in
 
-    | Nothing_h -> ""
+      sprintf "%s%s\n%s%s\n%s%s\n" curr_prefix el0.name prefix2 attributes_pp prefix2 childs_pp 
+
+    | Text_El s -> sprintf "%stext:\"%s\"\n" curr_prefix s

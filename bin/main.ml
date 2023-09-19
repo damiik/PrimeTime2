@@ -108,7 +108,7 @@ let display_row request row =
 in
 
   Dream.log "%s" (Lexer.tokensl2str tokens);
-  let _ = match (Array.of_list tokens |> ref) |> Parser.parser_run Parser.element_p with
+  let _ = match (Array.of_list tokens |> ref) |> Parser.parser_run Parser.tag_element_p with
     | Ok el  ->
       Dream.log "\n\n------------------------------\n%s\n------------------------------\n" (Parser.pp el "  " "  ")
     | _ -> ()
