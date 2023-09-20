@@ -7,27 +7,12 @@ open Lexer
 
 exception ParserError of string
 
-type identifier_table_t = {
-
-  name: string;
-  value: int;
-  (* byte_counter: int; <<- for labels this is just value*)
-}
-
-
-(* type ident_v_ref = {
-
-  name: string;
-  v_ref: Int32 ref;
-} *)
-
 type state = { 
   
-    tokens: token array ref;
-    token_ix: int;
-    byte_counter: int;
-
-  }
+  tokens: token array ref;
+  token_ix: int;
+  byte_counter: int;
+}
 
 
 let set_state (t, i, c) = {tokens = t; token_ix = i; byte_counter = c; }
@@ -41,14 +26,14 @@ let state_next_token_w s w = {s with token_ix = s.token_ix + 1; byte_counter = s
 
 type error = { 
 
-    desc: string;
-    token_ix: int
-  }
+  desc: string;
+  token_ix: int
+}
 
 type 'a parser = {
 
-    run : state -> state * ('a, string) result
-  }
+  run : state -> state * ('a, string) result
+}
 
 let fail (e: string) = { 
   run = fun state -> 
@@ -56,18 +41,17 @@ let fail (e: string) = {
     state, Error (sprintf ": %s: %s at: [%d] " e (token2str !( state.tokens ).( state.token_ix )) state.token_ix) 
 }
 
-
 let return (x: 'a) = { run = fun state -> state, Ok x}
 
 let get_state p  = { run = fun state ->  
 
-    printf "get_state token:%s byte:%d\n" (
-      if state.token_ix < (Array.length !( state.tokens )) 
-      then  (token2str !( state.tokens ).( state.token_ix )) 
-      else ">>end<<" ) state.byte_counter;
-    match (state |> p.run) with
-    | (state', Ok res) -> state', Ok (res, state')
-    | (_, Error e) -> state, Error e
+  printf "get_state token:%s byte:%d\n" (
+    if state.token_ix < (Array.length !( state.tokens )) 
+    then  (token2str !( state.tokens ).( state.token_ix )) 
+    else ">>end<<" ) state.byte_counter;
+  match (state |> p.run) with
+  | (state', Ok res) -> state', Ok (res, state')
+  | (_, Error e) -> state, Error e
 }
 
 let map (f: 'a -> 'b) (p: 'a parser): 'b parser =
@@ -95,13 +79,14 @@ let ( <|> ) (p1: 'a parser) (p2: 'a parser): 'a parser = {
   
   run = fun state -> 
     match state |> p1.run with 
-    | _, Error e1 -> (match state |> p2.run with
-
-                      | _, Error e2 -> (state, Error (sprintf "%s or \n\t%s" e1 e2))
-                      | res2 -> res2
-    )
+    | _, Error e1 -> 
+      (match state |> p2.run with
+          | _, Error e2 -> (state, Error (sprintf "%s or \n\t%s" e1 e2))
+          | res2 -> res2
+      )
     | res1 -> res1
 }
+
 (* don't care of result from left side parser *)
 let ( *> ) (p1: 'a parser) (p2: 'b parser): 'b parser = { run = fun state -> 
   state |> (p1 >>= (fun _ -> p2 >>= (fun b -> return b))).run } (* this last run is run from bind operator >>= *)
@@ -113,8 +98,6 @@ let ( <* ) (p1: 'a parser) (p2: 'b parser): 'a parser = { run = fun state ->
 (* pair of left and right side will be used *)
 let ( <*> ) (p1: 'a parser) (p2: 'b parser): ('a * 'b) parser  = { run = fun state -> 
   state |> (p1 >>= (fun a -> p2 >>= (fun b -> return (a,b)))).run }
-
-
 
 (* this parser is also used as an option parser - always list will be returned (maybe empty)*)
 let zeroOrMore (p:'a parser) : 'a list parser = {
@@ -149,8 +132,6 @@ let oneOrMore (p:'a parser) : 'a list parser = {
     parse_fun state
 }    
 
-
-
 let is_a (t: token) : bool parser = {
   run = fun state -> 
 
@@ -164,6 +145,9 @@ let is_a (t: token) : bool parser = {
       state, Error ( sprintf ": Not a %s at: %d [%s] " (t |> token2str) state.token_ix  (token2str !( state.tokens ).( state.token_ix )))
 }
 
+
+
+(*------------- Xml parser ------------ *)
 type xml_object =
   | Text_El of string
   | Tag_El of tag_element
@@ -174,7 +158,7 @@ and tag_element = {
   mutable childs : xml_object list
 }
 
-(* name have only letters, digits, '_' and '@' characters *)
+(* tag name, attribute name. Have only letters, digits, '_' and '-' characters *)
 let name_p: string parser = {
   run = fun state -> 
    
@@ -207,42 +191,46 @@ let text_p: xml_object parser = {
       state, Error ( sprintf ": Element data expected but got: %s at: [%d] " (token2str token) state.token_ix)
 }
 
-let attribute_p: (string * string) parser = ( 
-  (name_p <* is_a Tok_Equ) <*> string_p >>= 
-          fun (n, s) -> return (n,s))
+let attribute_p: (string * string) parser = 
+  (name_p <* (is_a Tok_Equ)) <*> string_p >>= 
+          fun (n, s) -> return (n,s)
 
 let element_init_p : xml_object parser = 
   
-  (is_a Tok_Less *> (name_p <*> zeroOrMore attribute_p)<* is_a Tok_More >>= 
-    fun (n, l) -> return (Tag_El {name = n; childs = []; attributes = l}))
+  ((is_a Tok_Less) *> (name_p <*> zeroOrMore attribute_p) <* (is_a Tok_More) >>= 
+    fun (n, l) -> return (Tag_El {name = n; childs = []; attributes = l})) 
+let element_end_p : string parser = 
+  (is_a Tok_Less) *> (is_a Tok_Slash) *> name_p <* (is_a Tok_More) >>= 
+    fun (name) -> return name
 
-
-let element_end_p : unit parser = 
-  (is_a Tok_Less *> is_a Tok_Slash *> name_p <* is_a Tok_More >>= 
-    fun (_) -> return ())
+let autoclose_element_p : xml_object parser = 
+  
+      ((is_a Tok_Less) *> (name_p <*> zeroOrMore attribute_p) <* (is_a Tok_Slash) <* (is_a Tok_More) >>= 
+        fun (n, l) -> return (Tag_El {name = n; childs = []; attributes = l}))
 
 (* recursive parser must have this form *)
 let rec tag_element_p :  xml_object parser = 
-  { run = fun state -> 
-  state |> (
-  element_init_p >>= fun e -> 
-  (*(zeroOrMore text_p) >>= fun l ->*)
-  (zeroOrMore xml_object_p) >>= fun ch -> 
-  element_end_p >>= 
-    fun _ -> 
+  { run = fun state -> state |> (
+  element_init_p <*> (zeroOrMore xml_object_p) <*> element_end_p >>= 
+    fun ((e, ch), _) -> 
       match (e, ch) with 
       | (Tag_El e1, ch) -> 
-          (*e1.data <- x; *)
           e1.childs <- ch;
           return (Tag_El e1)
       | (e, _) -> return e
   ).run
 }
+
 and xml_object_p : xml_object parser = {
   run = fun state -> 
-    match state |> text_p.run with
-      | _, Error _ ->  state |> tag_element_p.run  (* don't care about error if have some alternative *)
-      | res1 -> res1
+    (match (state |> text_p.run) with
+      | (state, Ok r) -> (state, Ok r)
+      | _, Error _ ->  
+        (match (state |> tag_element_p.run) with  (* don't care about error if have some alternative *)
+            | (state, Ok r') -> (state, Ok r')
+            | _, Error _ -> (state |> autoclose_element_p.run)
+        )
+    )
 }
 
 

@@ -4,7 +4,7 @@ type token =
   | Tok_Equ
   | Tok_Slash
   | Tok_Word of string   (*  abc2  *)
-  | Tok_String of string (* "abc" *)
+  | Tok_String of string (* "abc" or 'abc' *)
   | Tok_Text of string (* >abc...< *)
   | Tok_End
   | Tok_NewL
@@ -48,12 +48,17 @@ let tokenize str =
       (* Printf.printf "tokenize string: %s\n" token; *)
       (Tok_String token)::(f (pos + (String.length token + 2)) s)
     end
-    else if (Str.string_match (Str.regexp "[a-zA-Z_@][a-zA-Z_@0-9]*") s pos) then begin
+    else if (Str.string_match (Str.regexp {|\'\([^\']*\)\'|}) s pos) then begin
+      let token = Str.matched_group 1 s in
+      (* Printf.printf "tokenize string: %s\n" token; *)
+      (Tok_String token)::(f (pos + (String.length token + 2)) s)
+    end
+    else if (Str.string_match (Str.regexp {|[a-zA-Z_][a-zA-Z_0-9\-]*|}) s pos) then begin
       let token = Str.matched_string s in
       (* Printf.printf "tokenize word: %s\n" token; *)
       (Tok_Word token)::(f (pos + (String.length token)) s)
     end
-    else if (Str.string_match (Str.regexp {|\([\t ]+\)\|\(\;[^\n]*\)|}) s pos) then begin
+    else if (Str.string_match (Str.regexp {|[\x09 ]+|}) s pos) then begin
       let token = Str.matched_string s in
       (* Printf.printf "tokenize white: %s\n" token; *)
       (f (pos + (String.length token)) s)
@@ -64,7 +69,7 @@ let tokenize str =
       Tok_NewL::(f (pos + (String.length token)) s)
     end 
     else
-      raise (TokenizerError (Printf.sprintf "\n\tERR00 >> Nobody expects the string: [%s] (or spanish inquisition).\n" (Str.last_chars s ((String.length s) - pos))))
+      raise (TokenizerError (Printf.sprintf "XML TOKENIZER ERROR>> Nobody expects the string: [%s] (or spanish inquisition).\n" (Str.last_chars s ((String.length s) - pos))))
   in
   (f 0 str)
 
@@ -78,7 +83,7 @@ let tokenize str =
       | Tok_Word s -> Printf.sprintf "(%s)" s  
       | Tok_String s -> Printf.sprintf "(\"%s\")" s  
       | Tok_Text s -> Printf.sprintf "_(%s)_" s  
-      | Tok_NewL -> "(\\n)"
+      | Tok_NewL -> "<new_l>"
       | Tok_End -> "(Tok_End)"
   
   
