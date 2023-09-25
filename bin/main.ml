@@ -21,6 +21,7 @@ type record_t = {
   mutable data: string;
   childs: int list;
 }
+
 let kind_options = ["Article"; "Text"; "RawHtml"]
 let kind_s k = match k with 
   | Article -> "Article"
@@ -83,8 +84,13 @@ let display_row request row =
 (*  let tokens : Lexer.token list = Lexer.tokenize {|<h1 style="text-align: center;" name="dupa"><a>abc</a></h1>|} *)
 (*  let tokens : Lexer.token list = Lexer.tokenize {|<h5 style="text-align: left;"><em>👉 </em><span style="color: #236fa1;"><em><a style="color: #236fa1;" title="Obliczenia strat dynamicznych dla mosfet " href="https://www.elektroda.pl/rtvforum/topic3474295.html">Obliczenia strat dynamicznych dla mosfet</a></em></span></h5>|}*)
  let tokens : Lexer.token list = Lexer.tokenize 
-  {|<div>
-  <p> </p>
+ (* {|<body class="bg-stone-700 text-yellow-400 text-xl font-['Nunito_Sans']"><div  class="bg-stone-900 grid grid-cols-4 gap-4 p-6"><div class="bg-stone-850 text-white col-span-1"><div class="p-4 scrolling-sidebar"><h1 class="text-2xl font-semibold">Sidebar</h1><ul class="mt-4"><li class="mb-2"><a href="#" class="hover:text-lime-600">Dashboard</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Products</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Customers</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Orders</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Settings22</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Dashboard</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Products</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Customers</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Orders</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Settings22</a></li></ul></div></div><main class="col-span-3 p-6 rounded shadow"><div class="list"><div class="row_class"><div class="name">foo1</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;1&quot;,&quot;dream.csrf&quot;:&quot;ADWnGwb3lRsn0_jqFbxk_k88vE2RTovl9Q4AZKR29UfN-H45TsRgLfaRGS6maS16aktp9txD8Srk_Un_1ZYAWcy4lIvpbaSClOGo571HpiVO&quot;}">Zapytania HTTP mogą być generowane z dowolnych elementów (nie tylko z &lt;a&gt; lub &lt;form&gt;)</div></div><div class="row_class"><div class="name">foo2</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;2&quot;,&quot;dream.csrf&quot;:&quot;AG-limB7nv-J4mFC5PqqKY4zj3jZIa8gJJBeVc4ecjtXjq73bw1vImD8JLeKapV7Po-Eh5HBhZAZpaB9frR628Jj-9vtlHqdV-PoCdCMVnas&quot;}">Zapytania HTTP mogą być genrewane przez dowolne zdarzenia (nie tylko przez &quot;click&quot; i &quot;submit&quot;)</div></div><div class="row_class"><div class="name">foo4</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;4&quot;,&quot;dream.csrf&quot;:&quot;ANThgIAIBdGxw0TlGes8pMzaHeQtOMRoKVp6wy3HxWGMOMtkAk_IPfjgSl0wjzViO-wPhTRRDxv7w4EHjV1Y2bzNts54xmvXsIYw093ngyz0&quot;}">Zastępowana może być dowolna część dokumentu HTML (nie cały dokument)</div></div><div class="row_class"><div class="name">foo5</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;5&quot;,&quot;dream.csrf&quot;:&quot;AKTD3YnxAfokc2fFa3be-QoHJfcNIAiOK506Brx99xCEmL6rDi0pxR4Q6gUaU4I9RorQpZbBsNgzCCrMWXv4CztZSJPZuZRDgCdFIGZ8hWQ6&quot;}">Strony mogą być przeładowywane bez ponownego wczytywania nagłówków (a więc css'ów, fontów itp).</div></div><div class="row_class"><div class="name">foo6</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;6&quot;,&quot;dream.csrf&quot;:&quot;AD7JVtNspWcfTkr6b-BGwX-chgGf33HbHUw13x0ue1tY1NEqxXbZdM35D7WfTGb6FqR-eEQHnY_kvFcPL1MVKHW-Y8JJggEp8DYXUNG5KYxg&quot;}">&lt;p&gt;Ogólnie &lt;b&gt;idea&lt;/b&gt; jest taka, żeby &lt;i&gt;odświeżać&lt;/i&gt; tylko elementy strony które wymagają odświeżenia&lt;/p&gt;</div></div></div></main></div></body>
+ 
+ |} *)
+ 
+ {|<div> 
+
+  <p>1 </p>
   <h5 style="text-align: center;">Sterownik silnika Sabvoton 7245ML</h5>
   <p><img src="https://db3pap003files.storage.live.com/y4mF6pPop5n3l6O4MSptLpZ3hpsK1xgnmqZFc-E1OxZb6N-oWp9pwFx4AYHqnzAs22RFbmEkI0N_GpGUtbXDt0zjyj0Gt1kWfhv3PHk8D0bBh-bNhToZxRm6ERRYALZbD9fXGAvsMrwyg2rFHtr6C3upaX3MdeXBgGCIvbGgVfkQFs9qmilw5ObsD8ieS7ONaRE?width=1016&amp;height=588&amp;cropmode=none" alt="" width="1016" height="588" /></p>
   <ul style="list-style: none;">
@@ -99,14 +105,22 @@ let display_row request row =
   <li><strong>Kolor obudowy</strong> Alumimiun/szaro-czarne</li>
   </ul>
   <p> </p>
-  <h4><strong>Opis przewodów Sterownika:</strong></h4>
+  <h4><strong>Opis przewodów 
+  Sterownika:</strong></h4>
   <p> </p>
-  <blockquote><strong>Czarny</strong> (GND),<strong>Czerwony</strong> (+5V),<strong>Zielony (Hall),</strong><strong>Niebieski (Hall),</strong><strong>Żółty (Hall)</strong> - złącza Halla z silnika.</blockquote>
-  <p> </p>
+  <blockquote>
+    <strong>Czarny</strong> (GND),
+    <strong>Czerwony</strong> (+5V),
+    <strong>Zielony (Hall),</strong>
+    <strong>Niebieski (Hall),</strong>
+    <strong>Żółty (Hall)</strong>
+     - złącza Halla z silnika.
+  </blockquote>
+  <p>2 </p>
   </div>
 
-
 |} 
+
 
 in
 
@@ -114,7 +128,8 @@ in
   let _ = match (Array.of_list tokens |> ref) |> Parser.parser_run Parser.tag_element_p with
     | Ok el  ->
       Dream.log "\n\n------------------------------\n%s\n------------------------------\n" (Parser.pp el "  " "  ")
-    | _ -> ()
+    | Error {desc =e; token_ix=_} -> 
+      Dream.log "\n\n------------------------------\nHtml parser error:%s\n------------------------------\n" e 
     in
 
 
