@@ -78,6 +78,33 @@ let edit_form request row =
     ]
   ]
 
+let rec xml_to_elt request xml =   
+  let open Tyxml.Html in
+  match xml with 
+  | Parser.Tag_El el -> (
+    match el.name with
+    | "p" -> 
+      let p_childs : [>`I | `B |`Div |`Span] elt list_wrap = List.fold_left (fun l ch -> (xml_to_elt request ch)::l) [] el.childs in
+      (* let chi = [txt ""; (i [txt ""])] in *)
+      (div (List.map (fun a  -> 
+                        let i   : [<Html_types.p_content_fun] elt  = a in    
+                    i) p_childs))
+    | "b" -> 
+      (match el.childs with
+      | [] -> (b [txt ""])
+      | (Text_El x)::_ -> (b [txt x])
+      | _ -> (b [txt "?"])
+      )
+    | "i" -> 
+      (match el.childs with
+      | [] -> (i [txt ""])
+      | (Text_El x)::_ -> (i [txt x])
+      | _ -> (i [txt "?"])
+      )
+    | n -> span [(txt n)]
+    )
+  | Text_El t -> span [(txt t)]
+
 let display_row request row =
   let vals = Printf.sprintf "{\"row_id\":\"%d\",\"dream.csrf\":\"%s\"}" row.id (Dream.csrf_token request) in
  
@@ -88,43 +115,32 @@ let display_row request row =
  
  |} *)
  
- {|<div> 
-
-  <p>1 </p>
-  <h5 style="text-align: center;">Sterownik silnika Sabvoton 7245ML</h5>
-  <p><img src="https://db3pap003files.storage.live.com/y4mF6pPop5n3l6O4MSptLpZ3hpsK1xgnmqZFc-E1OxZb6N-oWp9pwFx4AYHqnzAs22RFbmEkI0N_GpGUtbXDt0zjyj0Gt1kWfhv3PHk8D0bBh-bNhToZxRm6ERRYALZbD9fXGAvsMrwyg2rFHtr6C3upaX3MdeXBgGCIvbGgVfkQFs9qmilw5ObsD8ieS7ONaRE?width=1016&amp;height=588&amp;cropmode=none" alt="" width="1016" height="588" /></p>
-  <ul style="list-style: none;">
-  <li><strong>Producent</strong> Sabvoton</li>
-  <li><strong>Model</strong> ML7245</li>
-  <li><strong>Zakres napięć</strong> min 40V - max 55V</li>
-  <li><strong>Prąd szczytowy</strong> 130A</li>
-  <li><strong>Prąd stały</strong> 45A</li>
-  <li><strong>Współpraca z czujnikiem halla</strong> Tak</li>
-  <li><strong>Rozmiar instalacji</strong> 190x110x50mm</li>
-  <li><strong>Waga</strong> 1,1kg</li>
-  <li><strong>Kolor obudowy</strong> Alumimiun/szaro-czarne</li>
-  </ul>
-  <p> </p>
-  <h4><strong>Opis przewodów 
-  Sterownika:</strong></h4>
-  <p> </p>
-  <blockquote>
-    <strong>Czarny</strong> (GND),
-    <strong>Czerwony</strong> (+5V),
-    <strong>Zielony (Hall),</strong>
-    <strong>Niebieski (Hall),</strong>
-    <strong>Żółty (Hall)</strong>
-     - złącza Halla z silnika.
-  </blockquote>
-  <p>2 </p>
-  </div>
+{|<div>
+ <p style="font-weight: normal; line-height: 0.58cm; margin-bottom: 0cm">
+ <font color="#ede0ce"><font face="JetBrainsMono Nerd Font Mono, Droid Sans Mono, monospace, monospace"><font size="3" style="font-size: 12pt"><span style="background: #1a1b1d"><font color="#92b55f">let</font>
+ <font color="#e8da5e">token</font> <font color="#92b55f">=</font> <font color="#92b55f">!</font>(
+ state<font color="#a0988e">.</font>tokens )<font color="#a0988e">.</font>(
+ state<font color="#a0988e">.</font>token_ix ) <font color="#a0988e">in</font></span></font></font></font></p>
+ <p style="font-weight: normal; line-height: 0.58cm; margin-bottom: 0cm">
+ <font color="#ede0ce"><font face="JetBrainsMono Nerd Font Mono, Droid Sans Mono, monospace, monospace"><font size="3" style="font-size: 12pt"><span style="background: #1a1b1d"><font color="#a0988e">let</font>
+ (row<font color="#a0988e">,</font> col) <font color="#92b55f">=</font>
+ token2pos token <font color="#a0988e">in</font></span></font></font></font></p>
+ <p style="font-weight: normal; line-height: 0.58cm; margin-bottom: 0cm">
+ <font color="#ede0ce"><font face="JetBrainsMono Nerd Font Mono, Droid Sans Mono, monospace, monospace"><font size="3" style="font-size: 12pt"><span style="background: #1a1b1d">state<font color="#a0988e">,</font>
+ <font color="#487d76">Error</font> (sprintf <font color="#e8da5e">&quot;:
+ </font><font color="#487d76">%s</font><font color="#e8da5e">: </font><font color="#487d76">%s</font><font color="#e8da5e">
+ at: (row:</font><font color="#487d76">%d</font><font color="#e8da5e">,
+ col:</font><font color="#487d76">%d</font><font color="#e8da5e">) &quot;</font>
+ e (token2str token) row col) </span></font></font></font>
+ </p>
+</div>
 
 |} 
 
 
 in
 
-  Dream.log "%s" (Lexer.tokensl2str tokens);
+  (* Dream.log "%s" (Lexer.tokensl2str tokens); *)
   let _ = match (Array.of_list tokens |> ref) |> Parser.parser_run Parser.tag_element_p with
     | Ok el  ->
       Dream.log "\n\n------------------------------\n%s\n------------------------------\n" (Parser.pp el "  " "  ")
@@ -134,7 +150,13 @@ in
 
 
   let open Tyxml.Html in
-  let row_div = if row.kind_of = RawHtml then (txt row.data) else (txt row.data) in
+  let row_div = if row.kind_of = RawHtml then 
+    let tokens : Lexer.token list = Lexer.tokenize row.data in
+    match( Array.of_list tokens |> ref) |> Parser.parser_run Parser.tag_element_p with
+    | Ok e -> xml_to_elt request e 
+    | Error {desc =e; token_ix=_} -> (txt  (Printf.sprintf "Html parser error:%s" e ))
+  
+  else (txt row.data) in
   (*mark this div with css class "row_class", will be needed for remove whole record row, 
     while this is hx-target class /could be #id as weell/ *)
   div ~a:[a_class ["row_class"]] [
@@ -151,6 +173,7 @@ in
     ]
   ]
 ;;
+
 
 let index request article_id data_ref =
   let open Tyxml.Html in
