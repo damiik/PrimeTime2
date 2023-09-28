@@ -78,32 +78,30 @@ let edit_form request row =
     ]
   ]
 
+let rec xml_to_elt2 request xml =   
+  let open Tyxml.Html in
+  match xml with 
+  | Parser.Tag_El el -> (
+    match el.name with
+    | "u" -> (u (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+    | "b" -> (b (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+    | "i" -> (i (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+    | n -> span [(txt n)]
+    )
+  | Text_El t -> span [(txt t)]
+
 let rec xml_to_elt request xml =   
   let open Tyxml.Html in
   match xml with 
   | Parser.Tag_El el -> (
     match el.name with
-    | "p" -> 
-      let p_childs : [>`I | `B |`Div |`Span] elt list_wrap = List.fold_left (fun l ch -> (xml_to_elt request ch)::l) [] el.childs in
-      (* let chi = [txt ""; (i [txt ""])] in *)
-      (div (List.map (fun a  -> 
-                        let i   : [<Html_types.p_content_fun] elt  = a in    
-                    i) p_childs))
-    | "b" -> 
-      (match el.childs with
-      | [] -> (b [txt ""])
-      | (Text_El x)::_ -> (b [txt x])
-      | _ -> (b [txt "?"])
-      )
-    | "i" -> 
-      (match el.childs with
-      | [] -> (i [txt ""])
-      | (Text_El x)::_ -> (i [txt x])
-      | _ -> (i [txt "?"])
-      )
-    | n -> span [(txt n)]
+    | "p" -> (p (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+    | "div" -> let ch1 = List.fold_left (fun l ch -> (xml_to_elt request ch)::l) [] el.childs in 
+      if (List.length ch1) = 0 then (div (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+      else (div ch1)
+    | n -> div [(txt n)]
     )
-  | Text_El t -> span [(txt t)]
+  | Text_El t -> p [(txt t)]
 
 let display_row request row =
   let vals = Printf.sprintf "{\"row_id\":\"%d\",\"dream.csrf\":\"%s\"}" row.id (Dream.csrf_token request) in
