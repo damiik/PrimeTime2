@@ -90,18 +90,39 @@ let rec xml_to_elt2 request xml =
     )
   | Text_El t -> span [(txt t)]
 
+let xml_to_elt_li request xml =   
+    let open Tyxml.Html in
+    match xml with 
+    | Parser.Tag_El el -> (
+      match el.name with
+      | "li" -> (li (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+      | n -> li [txt n]
+    )
+    | Text_El t -> li [txt t]
+
+(* let xml_to_elt_ul request xml =   
+    let open Tyxml.Html in
+    match xml with 
+    | Parser.Tag_El el -> (
+      match el.name with
+      | "ul" -> (ul (List.fold_left (fun l ch -> (xml_to_elt_li request ch)::l) [] el.childs))
+      | n -> ul [li [txt n]]
+    )
+    | Text_El t -> ul [li [(txt t)]] *)
+
 let rec xml_to_elt request xml =   
   let open Tyxml.Html in
   match xml with 
   | Parser.Tag_El el -> (
     match el.name with
     | "p" -> (p (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+    | "ul" -> (ul ~a:[a_style "padding-left: 20px;"] (List.fold_left (fun l ch -> (xml_to_elt_li request ch)::l) [] el.childs))
     | "div" -> let ch1 = List.fold_left (fun l ch -> (xml_to_elt request ch)::l) [] el.childs in 
       if (List.length ch1) = 0 then (div (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
       else (div ch1)
     | n -> div [(txt n)]
     )
-  | Text_El t -> p [(txt t)]
+  | Text_El t -> div [(txt t)]
 
 let display_row request row =
   let vals = Printf.sprintf "{\"row_id\":\"%d\",\"dream.csrf\":\"%s\"}" row.id (Dream.csrf_token request) in
@@ -233,7 +254,10 @@ let () =
     {name = "foo3"; kind_of = Text; childs = []; data = "Dostępne są wszystkie metody AJAX (nie tylko POST i GET ale również PUT, PATCH, DELETE)"; id = 3};
     {name = "foo4"; kind_of = Text; childs = []; data = "Zastępowana może być dowolna część dokumentu HTML (nie cały dokument)"; id = 4};
     {name = "foo5"; kind_of = Text; childs = []; data = "Strony mogą być przeładowywane bez ponownego wczytywania nagłówków (a więc css'ów, fontów itp)."; id = 5};
-    {name = "foo6"; kind_of = RawHtml; childs = []; data = "<p>Ogólnie <b>idea</b> jest taka, żeby <i>odświeżać</i> tylko elementy strony które wymagają odświeżenia</p>"; id = 6};
+    {name = "foo6"; kind_of = RawHtml; childs = []; data = "<div>
+    <p>Ogólnie <b>idea</b> jest taka, żeby <i>odświeżać</i> tylko elementy strony które wymagają odświeżenia</p>
+    <ul><li><b>1. A</b></li><li><b>2. B</b></li><li><b>3. C</b></li></ul>
+    </div>"; id = 6};
 
   ] in
 
