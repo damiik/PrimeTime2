@@ -151,26 +151,29 @@ let get_a_attrib attrib_list =
   | `Wbr
 *)
 
-let rec xml_to_elt2 request xml =   
+let rec xml_to_elt2 xml =   
   let open Tyxml.Html in
   match xml with 
   | Parser.Tag_El el -> (
     match el.name with
-    | "u" -> (u ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
-    | "b" -> (b ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
-    | "i" -> (i ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
-    | "span" -> (span ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
-    | "br" -> (br ~a:(get_a_attrib el.attributes) ())
-    | n -> span [(txt n)]
+    | "u" -> Some (u ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
+    | "b" -> Some (b ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
+    | "i" -> Some (i ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
+    | "span" -> Some (span ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
+    | "br" -> Some (br ~a:(get_a_attrib el.attributes) ())
+    | _ -> None
     )
-  | Text_El t -> (txt t)
+  | Text_El t -> Some (txt t)
 
-let xml_to_elt_li request xml =   
+and get_childs2 l ch = match (xml_to_elt2 ch) with | Some e -> e::l | None -> l
+
+
+let xml_to_elt_li xml =   
     let open Tyxml.Html in
     match xml with 
     | Parser.Tag_El el -> (
       match el.name with
-      | "li" -> (li ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+      | "li" -> (li ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> match (xml_to_elt2  ch) with |Some e -> e::l| None -> l) [] el.childs))
       | n -> li [txt n]
     )
     | Text_El t -> li [txt t]
@@ -180,34 +183,24 @@ let rec xml_to_elt request xml =
   match xml with 
   | Parser.Tag_El el -> (
     match el.name with
-    | "p" -> (p ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
-    | "h1" -> (h1 ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
-    | "h2" -> (h2 ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
-    | "h3" -> (h3 ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
-    | "h4" -> (h4 ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
-    | "h5" -> (h5 ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
-    | "h6" -> (h6 ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
-    | "ul" -> (ul ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt_li request ch)::l) [] el.childs))
+    | "p" -> (p ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
+    | "h1" -> (h1 ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
+    | "h2" -> (h2 ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
+    | "h3" -> (h3 ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
+    | "h4" -> (h4 ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
+    | "h5" -> (h5 ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
+    | "h6" -> (h6 ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
+    | "ul" -> (ul ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt_li ch)::l) [] el.childs))
     | "div" -> 
-      let empty_ch : [>`B |`Br |`I | `PCDATA| `Span |`U |`Div | `H1 | `H2 | `H3 | `H4 | `H5 | `H6 | `P | `Ul ]  elt list_wrap = [] in
-      let ch1 = List.fold_left (fun acc ch -> (xml_to_elt request ch)::acc) empty_ch el.childs in 
-      let ch2 : [>`B |`Br |`I | `PCDATA| `Span |`U |`Div | `H1 | `H2 | `H3 | `H4 | `H5 | `H6 | `P | `Ul ]  elt list_wrap  
-                  = List.fold_left (fun acc ch -> 
-                      let ch_e: [>`B |`Br |`I | `PCDATA| `Span |`U |`Div | `H1 | `H2 | `H3 | `H4 | `H5 | `H6 | `P | `Ul ]  elt 
-                        = xml_to_elt2 request ch in 
-                      ch_e::acc) empty_ch el.childs in
-      (*if (List.length ch1) = 0 then (div ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
-      else*) (div ~a:(get_a_attrib el.attributes) (ch1 @ ch2))
+      (match (List.fold_left get_childs2 [] el.childs) with
+      |[] -> (div ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt request ch)::l) [] el.childs))
+      |x ->(div ~a:(get_a_attrib el.attributes) x)
+      )
     | n -> div ~a:(get_a_attrib el.attributes) [(txt n)]
     )
   | Text_El t -> div [(txt t)]
-
-let display_row request row =
-  let vals = Printf.sprintf "{\"row_id\":\"%d\",\"dream.csrf\":\"%s\"}" row.id (Dream.csrf_token request) in
- 
-(*  let tokens : Lexer.token list = Lexer.tokenize {|<h1 style="text-align: center;" name="dupa"><a>abc</a></h1>|} *)
-(*  let tokens : Lexer.token list = Lexer.tokenize {|<h5 style="text-align: left;"><em>👉 </em><span style="color: #236fa1;"><em><a style="color: #236fa1;" title="Obliczenia strat dynamicznych dla mosfet " href="https://www.elektroda.pl/rtvforum/topic3474295.html">Obliczenia strat dynamicznych dla mosfet</a></em></span></h5>|}*)
- let tokens : Lexer.token list = Lexer.tokenize 
+  and get_childs2 l ch = match (xml_to_elt2 ch) with | Some e -> e::l | None -> l
+let html_string = 
  (* {|<body class="bg-stone-700 text-yellow-400 text-xl font-['Nunito_Sans']"><div  class="bg-stone-900 grid grid-cols-4 gap-4 p-6"><div class="bg-stone-850 text-white col-span-1"><div class="p-4 scrolling-sidebar"><h1 class="text-2xl font-semibold">Sidebar</h1><ul class="mt-4"><li class="mb-2"><a href="#" class="hover:text-lime-600">Dashboard</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Products</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Customers</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Orders</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Settings22</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Dashboard</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Products</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Customers</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Orders</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Settings22</a></li></ul></div></div><main class="col-span-3 p-6 rounded shadow"><div class="list"><div class="row_class"><div class="name">foo1</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;1&quot;,&quot;dream.csrf&quot;:&quot;ADWnGwb3lRsn0_jqFbxk_k88vE2RTovl9Q4AZKR29UfN-H45TsRgLfaRGS6maS16aktp9txD8Srk_Un_1ZYAWcy4lIvpbaSClOGo571HpiVO&quot;}">Zapytania HTTP mogą być generowane z dowolnych elementów (nie tylko z &lt;a&gt; lub &lt;form&gt;)</div></div><div class="row_class"><div class="name">foo2</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;2&quot;,&quot;dream.csrf&quot;:&quot;AG-limB7nv-J4mFC5PqqKY4zj3jZIa8gJJBeVc4ecjtXjq73bw1vImD8JLeKapV7Po-Eh5HBhZAZpaB9frR628Jj-9vtlHqdV-PoCdCMVnas&quot;}">Zapytania HTTP mogą być genrewane przez dowolne zdarzenia (nie tylko przez &quot;click&quot; i &quot;submit&quot;)</div></div><div class="row_class"><div class="name">foo4</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;4&quot;,&quot;dream.csrf&quot;:&quot;ANThgIAIBdGxw0TlGes8pMzaHeQtOMRoKVp6wy3HxWGMOMtkAk_IPfjgSl0wjzViO-wPhTRRDxv7w4EHjV1Y2bzNts54xmvXsIYw093ngyz0&quot;}">Zastępowana może być dowolna część dokumentu HTML (nie cały dokument)</div></div><div class="row_class"><div class="name">foo5</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;5&quot;,&quot;dream.csrf&quot;:&quot;AKTD3YnxAfokc2fFa3be-QoHJfcNIAiOK506Brx99xCEmL6rDi0pxR4Q6gUaU4I9RorQpZbBsNgzCCrMWXv4CztZSJPZuZRDgCdFIGZ8hWQ6&quot;}">Strony mogą być przeładowywane bez ponownego wczytywania nagłówków (a więc css'ów, fontów itp).</div></div><div class="row_class"><div class="name">foo6</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;6&quot;,&quot;dream.csrf&quot;:&quot;AD7JVtNspWcfTkr6b-BGwX-chgGf33HbHUw13x0ue1tY1NEqxXbZdM35D7WfTGb6FqR-eEQHnY_kvFcPL1MVKHW-Y8JJggEp8DYXUNG5KYxg&quot;}">&lt;p&gt;Ogólnie &lt;b&gt;idea&lt;/b&gt; jest taka, żeby &lt;i&gt;odświeżać&lt;/i&gt; tylko elementy strony które wymagają odświeżenia&lt;/p&gt;</div></div></div></main></div></body>
  
  |} *)
@@ -236,8 +229,15 @@ let display_row request row =
   </div>
 </div>
 
-|}
+|} 
 
+let display_row request row =
+  let vals = Printf.sprintf "{\"row_id\":\"%d\",\"dream.csrf\":\"%s\"}" row.id (Dream.csrf_token request) in
+ 
+(*  let tokens : Lexer.token list = Lexer.tokenize {|<h1 style="text-align: center;" name="dupa"><a>abc</a></h1>|} *)
+(*  let tokens : Lexer.token list = Lexer.tokenize {|<h5 style="text-align: left;"><em>👉 </em><span style="color: #236fa1;"><em><a style="color: #236fa1;" title="Obliczenia strat dynamicznych dla mosfet " href="https://www.elektroda.pl/rtvforum/topic3474295.html">Obliczenia strat dynamicznych dla mosfet</a></em></span></h5>|}*)
+
+let tokens : Lexer.token list = Lexer.tokenize html_string
 in
 
   (* Dream.log "%s" (Lexer.tokensl2str tokens); *)
@@ -335,17 +335,7 @@ let () =
     {name = "foo3"; kind_of = Text; childs = []; data = "Dostępne są wszystkie metody AJAX (nie tylko POST i GET ale również PUT, PATCH, DELETE)"; id = 3};
     {name = "foo4"; kind_of = Text; childs = []; data = "Zastępowana może być dowolna część dokumentu HTML (nie cały dokument)"; id = 4};
     {name = "foo5"; kind_of = Text; childs = []; data = "Strony mogą być przeładowywane bez ponownego wczytywania nagłówków (a więc css'ów, fontów itp)."; id = 5};
-    {name = "foo6"; kind_of = RawHtml; childs = []; data = {|<div class="bg-lime-900">
-<p>Ogólnie <b>idea</b> jest taka, żeby <i>odświeżać</i> tylko elementy strony które wymagają odświeżenia</p>
-<div class="bg-lime-200">
-   <p> Oto przykład listy: </p>
-</div>
-<ul>
-    <li><b>1. A</b></li>
-    <li><b>2. B</b></li>
-    <li><b>3. C</b></li>
-</ul>
-</div>|};
+    {name = "foo6"; kind_of = RawHtml; childs = []; data = html_string;
     id = 6};
 
   ] in

@@ -1,4 +1,4 @@
-(* Copyright by Dariusz Mikołajczyk 2023 *)
+(* Copyright by Dariusz Mikołajczyk 2024 *)
 
 type token = 
   | Tok_Less of int * int
@@ -26,7 +26,7 @@ let tokenize s =
     end   
     else if (Str.string_match (Str.regexp {|>\([^<]*\)<|}) s pos) then begin
       let token = Str.matched_group 1 s in
-      let token_l = String.to_seq token |> Seq.filter (fun a -> a != '\n'&& a != '\t' && a != ' ' ) in
+      let token_l = String.to_seq token |> Seq.filter (fun a -> a != '\n' && a != '\t' ) in
       let new_lines = String.to_seq token |> Seq.filter(fun a -> a == '\n') |> Seq.length in
       (* Printf.printf "tokenize string: %s\n" token; *)
       let token_len = String.length token in

@@ -229,7 +229,7 @@ let autoclose_element_p : xml_object parser =
 (* recursive parser must have this form *)
 let rec tag_element_p : xml_object parser = 
   { run = fun state -> state |> (
-  element_init_p <*> (zeroOrMore xml_object_p) <*> element_end_p >>= 
+  element_init_p <*> (((zeroOrMore text_p) *> (oneOrMore xml_object_p)) <|> (oneOrMore text_p)) <*> element_end_p >>= 
     fun ((e, ch), end_tag) ->
       match (e, ch) with 
       | (Tag_El e1, ch) -> 
@@ -255,7 +255,7 @@ and xml_object_p : xml_object parser = {
 *)
 and xml_object_p : xml_object parser = { run = fun state ->
   
-  (text_p <|> tag_element_p <|> autoclose_element_p (* <|> fail "<nieznany xml_obiekt>" *) ).run state }
+  (tag_element_p <|> autoclose_element_p (* <|> fail "<nieznany xml_obiekt>" *) ).run state }
 
 
 let parser_run (p: 'a parser) (t: token array ref): ('a, error) result =
