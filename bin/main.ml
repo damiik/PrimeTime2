@@ -78,49 +78,127 @@ let edit_form request row =
     ]
   ]
 
+
+
+let get_a_attrib attrib_list =  
+  let open Tyxml.Html in 
+  let a_class_attrib =match List.filter (fun (n,_) -> n = "class") attrib_list with
+  | [(_,s)] -> String.split_on_char ' ' s
+  | _ -> [] 
+  in
+  let a_style_attrib = match List.filter (fun (n,_) -> n = "style") attrib_list with
+  | [(_,s)] -> s
+  | _ -> ""
+  in
+  [a_class a_class_attrib; a_style a_style_attrib]
+
+
+(*
+  `A of Html_types.phrasing_without_interactive
+  | `Abbr
+  | `Audio of Html_types.phrasing_without_media
+  | `Audio_interactive of Html_types.phrasing_without_media
+  | `B
+  | `Bdo
+  | `Br
+  | `Button
+  | `Canvas of Html_types.phrasing
+  | `Cite
+  | `Code
+  | `Command
+  | `Datalist
+  | `Del of Html_types.phrasing
+  | `Dfn
+  | `Em
+  | `Embed
+  | `I
+  | `Iframe
+  | `Img
+  | `Img_interactive
+  | `Input
+  | `Ins of Html_types.phrasing
+  | `Kbd
+  | `Keygen
+  | `Label
+  | `Map of Html_types.phrasing
+  | `Mark
+  | `Meter
+  | `Noscript of Html_types.phrasing_without_noscript
+  | `Object of Html_types.phrasing
+  | `Object_interactive of Html_types.phrasing
+  | `Output
+  | `PCDATA
+  | `Picture
+  | `Progress
+  | `Q
+  | `Ruby
+  | `Samp
+  | `Script
+  | `Select
+  | `Small
+  | `Span
+  | `Strong
+  | `Sub
+  | `Sup
+  | `Svg
+  | `Template
+  | `Textarea
+  | `Time
+  | `U
+  | `Var
+  | `Video of Html_types.phrasing_without_media
+  | `Video_interactive of Html_types.phrasing_without_media
+  | `Wbr
+*)
+
 let rec xml_to_elt2 request xml =   
   let open Tyxml.Html in
   match xml with 
   | Parser.Tag_El el -> (
     match el.name with
-    | "u" -> (u (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
-    | "b" -> (b (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
-    | "i" -> (i (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+    | "u" -> (u ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+    | "b" -> (b ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+    | "i" -> (i ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+    | "span" -> (span ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+    | "br" -> (br ~a:(get_a_attrib el.attributes) ())
     | n -> span [(txt n)]
     )
-  | Text_El t -> span [(txt t)]
+  | Text_El t -> (txt t)
 
 let xml_to_elt_li request xml =   
     let open Tyxml.Html in
     match xml with 
     | Parser.Tag_El el -> (
       match el.name with
-      | "li" -> (li (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+      | "li" -> (li ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
       | n -> li [txt n]
     )
     | Text_El t -> li [txt t]
-
-(* let xml_to_elt_ul request xml =   
-    let open Tyxml.Html in
-    match xml with 
-    | Parser.Tag_El el -> (
-      match el.name with
-      | "ul" -> (ul (List.fold_left (fun l ch -> (xml_to_elt_li request ch)::l) [] el.childs))
-      | n -> ul [li [txt n]]
-    )
-    | Text_El t -> ul [li [(txt t)]] *)
 
 let rec xml_to_elt request xml =   
   let open Tyxml.Html in
   match xml with 
   | Parser.Tag_El el -> (
     match el.name with
-    | "p" -> (p (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
-    | "ul" -> (ul ~a:[a_style "padding-left: 20px;"] (List.fold_left (fun l ch -> (xml_to_elt_li request ch)::l) [] el.childs))
-    | "div" -> let ch1 = List.fold_left (fun l ch -> (xml_to_elt request ch)::l) [] el.childs in 
-      if (List.length ch1) = 0 then (div (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
-      else (div ch1)
-    | n -> div [(txt n)]
+    | "p" -> (p ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+    | "h1" -> (h1 ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+    | "h2" -> (h2 ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+    | "h3" -> (h3 ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+    | "h4" -> (h4 ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+    | "h5" -> (h5 ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+    | "h6" -> (h6 ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+    | "ul" -> (ul ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt_li request ch)::l) [] el.childs))
+    | "div" -> 
+      let empty_ch : [>`B |`Br |`I | `PCDATA| `Span |`U |`Div | `H1 | `H2 | `H3 | `H4 | `H5 | `H6 | `P | `Ul ]  elt list_wrap = [] in
+      let ch1 = List.fold_left (fun acc ch -> (xml_to_elt request ch)::acc) empty_ch el.childs in 
+      let ch2 : [>`B |`Br |`I | `PCDATA| `Span |`U |`Div | `H1 | `H2 | `H3 | `H4 | `H5 | `H6 | `P | `Ul ]  elt list_wrap  
+                  = List.fold_left (fun acc ch -> 
+                      let ch_e: [>`B |`Br |`I | `PCDATA| `Span |`U |`Div | `H1 | `H2 | `H3 | `H4 | `H5 | `H6 | `P | `Ul ]  elt 
+                        = xml_to_elt2 request ch in 
+                      ch_e::acc) empty_ch el.childs in
+      (*if (List.length ch1) = 0 then (div ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt2 request ch)::l) [] el.childs))
+      else*) (div ~a:(get_a_attrib el.attributes) (ch1 @ ch2))
+    | n -> div ~a:(get_a_attrib el.attributes) [(txt n)]
     )
   | Text_El t -> div [(txt t)]
 
@@ -134,28 +212,31 @@ let display_row request row =
  
  |} *)
  
-{|<div>
- <p style="font-weight: normal; line-height: 0.58cm; margin-bottom: 0cm">
- <font color="#ede0ce"><font face="JetBrainsMono Nerd Font Mono, Droid Sans Mono, monospace, monospace"><font size="3" style="font-size: 12pt"><span style="background: #1a1b1d"><font color="#92b55f">let</font>
- <font color="#e8da5e">token</font> <font color="#92b55f">=</font> <font color="#92b55f">!</font>(
- state<font color="#a0988e">.</font>tokens )<font color="#a0988e">.</font>(
- state<font color="#a0988e">.</font>token_ix ) <font color="#a0988e">in</font></span></font></font></font></p>
- <p style="font-weight: normal; line-height: 0.58cm; margin-bottom: 0cm">
- <font color="#ede0ce"><font face="JetBrainsMono Nerd Font Mono, Droid Sans Mono, monospace, monospace"><font size="3" style="font-size: 12pt"><span style="background: #1a1b1d"><font color="#a0988e">let</font>
- (row<font color="#a0988e">,</font> col) <font color="#92b55f">=</font>
- token2pos token <font color="#a0988e">in</font></span></font></font></font></p>
- <p style="font-weight: normal; line-height: 0.58cm; margin-bottom: 0cm">
- <font color="#ede0ce"><font face="JetBrainsMono Nerd Font Mono, Droid Sans Mono, monospace, monospace"><font size="3" style="font-size: 12pt"><span style="background: #1a1b1d">state<font color="#a0988e">,</font>
- <font color="#487d76">Error</font> (sprintf <font color="#e8da5e">&quot;:
- </font><font color="#487d76">%s</font><font color="#e8da5e">: </font><font color="#487d76">%s</font><font color="#e8da5e">
- at: (row:</font><font color="#487d76">%d</font><font color="#e8da5e">,
- col:</font><font color="#487d76">%d</font><font color="#e8da5e">) &quot;</font>
- e (token2str token) row col) </span></font></font></font>
- </p>
+(* {|<div class="bg-lime-900">
+    <p>Ogólnie <b>idea</b> jest taka, żeby <i>odświeżać</i> tylko elementy strony które wymagają odświeżenia</p>
+    <div class="bg-back">
+       <p> Oto przykład listy: </p>
+    </div>
+    <ul>
+        <li><b>1. A</b></li>
+        <li><b>2. B</b></li>
+        <li><b>3. C</b></li>
+    </ul>
+</div>
+|}  *)
+{|<div style="color: #ede0ce;background-color: #1a1b1d;font-family: 'JetBrainsMono Nerd Font Mono', 'Droid Sans Mono', 'monospace', monospace;font-weight: normal;font-size: 16px;line-height: 22px;white-space: pre;">
+  <div><span style="color: #7a7267;">(* Copyright by Dariusz Mikołajczyk 2024 *)</span></div>
+  <div><span style="color: #92b55f;">type</span><span style="color: #ede0ce;"> </span>
+<span style="color: #e8da5e;">token</span><span style="color: #ede0ce;"> </span>
+<span style="color: #92b55f;">=</span><span style="color: #ede0ce;"> </span></div>
+  <div><span style="color: #ede0ce;"> </span><span style="color: #a0988e;">|</span><span style="color: #ede0ce;">
+    </span><span style="color: #487d76;">Tok_Less</span><span style="color: #ede0ce;"> </span><span  style="color: #a0988e;">of</span>
+<span style="color: #ede0ce;"> </span><span style="color: #487d76;">int</span><span style="color: #ede0ce;"> </span>
+<span style="color: #92b55f;">*</span><span style="color: #ede0ce;"> </span><span style="color: #487d76;">int</span>
+  </div>
 </div>
 
-|} 
-
+|}
 
 in
 
@@ -254,10 +335,18 @@ let () =
     {name = "foo3"; kind_of = Text; childs = []; data = "Dostępne są wszystkie metody AJAX (nie tylko POST i GET ale również PUT, PATCH, DELETE)"; id = 3};
     {name = "foo4"; kind_of = Text; childs = []; data = "Zastępowana może być dowolna część dokumentu HTML (nie cały dokument)"; id = 4};
     {name = "foo5"; kind_of = Text; childs = []; data = "Strony mogą być przeładowywane bez ponownego wczytywania nagłówków (a więc css'ów, fontów itp)."; id = 5};
-    {name = "foo6"; kind_of = RawHtml; childs = []; data = "<div>
-    <p>Ogólnie <b>idea</b> jest taka, żeby <i>odświeżać</i> tylko elementy strony które wymagają odświeżenia</p>
-    <ul><li><b>1. A</b></li><li><b>2. B</b></li><li><b>3. C</b></li></ul>
-    </div>"; id = 6};
+    {name = "foo6"; kind_of = RawHtml; childs = []; data = {|<div class="bg-lime-900">
+<p>Ogólnie <b>idea</b> jest taka, żeby <i>odświeżać</i> tylko elementy strony które wymagają odświeżenia</p>
+<div class="bg-lime-200">
+   <p> Oto przykład listy: </p>
+</div>
+<ul>
+    <li><b>1. A</b></li>
+    <li><b>2. B</b></li>
+    <li><b>3. C</b></li>
+</ul>
+</div>|};
+    id = 6};
 
   ] in
 
