@@ -24,13 +24,14 @@ let tokenize s =
       (* Printf.printf "tokenize div\n"; *)
       Tok_Slash(ln, col)::(f (pos + 1) ln (col + 1))
     end   
-    else if (Str.string_match (Str.regexp {|>\([^<]*\)<|}) s pos) then begin
+    else if (Str.string_match (Str.regexp {|>\([^<]*\)<|}) s pos) then begin (*  >...<  *)
       let token = Str.matched_group 1 s in
-      let token_l = String.to_seq token |> Seq.filter (fun a -> a != '\n' && a != '\t' ) in
+      (* let token_l = String.to_seq token |> Seq.filter (fun a -> a != '\n' && a != '\t' && != ' ') in *)
       let new_lines = String.to_seq token |> Seq.filter(fun a -> a == '\n') |> Seq.length in
       (* Printf.printf "tokenize string: %s\n" token; *)
       let token_len = String.length token in
-      let t0 = if Seq.length token_l > 0
+      (* let t0 = if Seq.length token_l > 0 *)
+      let t0 = if token_len > 0
         then Tok_More(ln, col)::(Tok_Text (token, ln, col + 1))::Tok_Less(ln, col + 1 + token_len)::[] 
         else Tok_More(ln, col)::Tok_Less(ln, col + token_len)::[] in  (*we don't need empty text tokens here*)
 
@@ -66,14 +67,14 @@ let tokenize s =
       (Tok_Word (token, ln, col))::(f (pos + String.length token) ln (col + String.length token))
     end
     else if (Str.string_match (Str.regexp {|[\x09 ]+|}) s pos) then begin (* whitespaces *)
-      let token = Str.matched_string s in
+      let token_l = Str.matched_string s |> String.length in
       (* Printf.printf "tokenize white: %s\n" token; *)
-      (f (pos + (String.length token)) ln (col + String.length token))
+      (f (pos + token_l) ln (col + token_l))
     end
     else if (Str.string_match (Str.regexp "[\n]+") s pos) then begin
-      let token = Str.matched_string s in
+      let token_l = Str.matched_string s |> String.length in
       (* Printf.printf "tokenize newl: %s\n" token; *)
-      Tok_NewL(ln, col)::(f (pos + (String.length token)) (ln+1) 1)
+      (f (pos + token_l) (ln + token_l) 1)
     end 
     else
       raise (TokenizerError (Printf.sprintf "XML TOKENIZER ERROR>> Nobody expects the string: [%s] (or spanish inquisition).\n" (Str.last_chars s ((String.length s) - pos))))

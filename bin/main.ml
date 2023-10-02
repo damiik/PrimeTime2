@@ -217,7 +217,7 @@ let html_string =
     </ul>
 </div>
 |}  *)
-{|<div style="color: #ede0ce;background-color: #1a1b1d;font-family: 'JetBrainsMono Nerd Font Mono', 'Droid Sans Mono', 'monospace', monospace;font-weight: normal;font-size: 16px;line-height: 22px;white-space: pre;">
+(* {|<div style="color: #ede0ce;background-color: #1a1b1d;font-family: 'JetBrainsMono Nerd Font Mono', 'Droid Sans Mono', 'monospace', monospace;font-weight: normal;font-size: 16px;line-height: 22px;white-space: pre;">
   <div><span style="color: #7a7267;">(* Copyright by Dariusz Mikołajczyk 2024 *)</span></div>
   <div><span style="color: #92b55f;">type</span><span style="color: #ede0ce;"> </span>
 <span style="color: #e8da5e;">token</span><span style="color: #ede0ce;"> </span>
@@ -229,8 +229,21 @@ let html_string =
   </div>
 </div>
 
-|} 
-
+|}  *)
+{|
+<div style="color: #ede0ce;background-color: #1a1b1d;font-family: 'JetBrainsMono Nerd Font Mono', 'Droid Sans Mono', 'monospace', monospace;font-weight: normal;font-size: 16px;line-height: 22px;white-space: pre;">
+  <div><span style="color: #7a7267;">(* Copyright by Dariusz Mikołajczyk 2024 *)</span></div>
+  <div><span style="color: #92b55f;">type</span><span style="color: #ede0ce;">
+    </span><span style="color: #e8da5e;">token</span><span style="color: #ede0ce;"> </span><span style="color: #92b55f;">=</span><span style="color: #ede0ce;"> </span>
+  </div>
+  <div><span style="color: #ede0ce;"> </span><span style="color: #a0988e;">|</span><span style="color: #ede0ce;">
+    </span><span style="color: #487d76;">Tok_Less</span><span style="color: #ede0ce;"> </span><span
+      style="color: #a0988e;">of</span><span style="color: #ede0ce;"> </span><span
+      style="color: #487d76;">int</span><span style="color: #ede0ce;"> </span><span
+      style="color: #92b55f;">*</span><span style="color: #ede0ce;"> </span><span style="color: #487d76;">int</span>
+  </div>  
+</div>
+|}
 let display_row request row =
   let vals = Printf.sprintf "{\"row_id\":\"%d\",\"dream.csrf\":\"%s\"}" row.id (Dream.csrf_token request) in
  

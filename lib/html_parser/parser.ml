@@ -187,24 +187,46 @@ let name_p: string parser = {
       state, Error ( sprintf ": Element name expected but got: %s at: [%d] " (token2str token) state.token_ix)
 }
 
+let string_to_char_list s =
+  s |> String.to_seq |> List.of_seq
+  
+let char_list_to_string (l:char list)  =
+    List.fold_left (fun acc e ->
+      if acc = "" then Printf.sprintf "%c" e else Printf.sprintf "%s%c" acc e) "" l
+
+let from_amp s =
+
+  let rec reduce_from_amp sq = 
+    match sq with 
+    | '&'::'l'::'t'::';'::rest_of_string -> '<'::(reduce_from_amp rest_of_string)
+    | '&'::'g'::'t'::';'::rest_of_string -> '>'::(reduce_from_amp rest_of_string)
+    | '&'::'a'::'m'::'p'::';'::rest_of_string -> '&'::(reduce_from_amp rest_of_string)
+    | z :: rest_of_string -> z::(reduce_from_amp rest_of_string)
+    | [] -> []
+  in
+  (string_to_char_list s) |> reduce_from_amp |> char_list_to_string
+
 (* string is everything between "" brackets *)
 let string_p: string parser = {
   run = fun state -> 
    
     match !( state.tokens ).( state.token_ix ) with (* określić aktualną pozycję jako pole w state lub obliczać później *)
     | Tok_String(l_str, _, _) -> 
-         {state with token_ix = (state.token_ix + 1); }, Ok l_str
+         {state with token_ix = (state.token_ix + 1); }, Ok (from_amp l_str)
     | token -> 
       state, Error ( sprintf ": Element string expected but got: %s at: [%d] " (token2str token) state.token_ix)
 }
+
+
 
 (* text is everyting between '>' and '<' characters *)
 let text_p: xml_object parser = {
   run = fun state -> 
    
     match !( state.tokens ).( state.token_ix ) with (* określić aktualną pozycję jako pole w state lub obliczać później *)
-    | Tok_Text (l_str, _, _) -> 
-         {state with token_ix = (state.token_ix + 1); }, Ok (Text_El l_str)
+    | Tok_Text (l_str, _, _) ->
+          (* let pos = Str.search_forward (Str.regexp {|&\([^;]*\);|}) l_str 1 in  *)
+         {state with token_ix = (state.token_ix + 1); }, Ok (Text_El (from_amp l_str))
     | token -> 
       state, Error ( sprintf ": Element data expected but got: %s at: [%d] " (token2str token) state.token_ix)
 }
@@ -229,7 +251,7 @@ let autoclose_element_p : xml_object parser =
 (* recursive parser must have this form *)
 let rec tag_element_p : xml_object parser = 
   { run = fun state -> state |> (
-  element_init_p <*> (((zeroOrMore text_p) *> (oneOrMore xml_object_p)) <|> (oneOrMore text_p)) <*> element_end_p >>= 
+  element_init_p <*> (((zeroOrMore text_p) *> (oneOrMore xml_object_p)) <|> (oneOrMore text_p)) <*> element_end_p <* zeroOrMore text_p >>= 
     fun ((e, ch), end_tag) ->
       match (e, ch) with 
       | (Tag_El e1, ch) -> 
@@ -255,7 +277,7 @@ and xml_object_p : xml_object parser = {
 *)
 and xml_object_p : xml_object parser = { run = fun state ->
   
-  (tag_element_p <|> autoclose_element_p (* <|> fail "<nieznany xml_obiekt>" *) ).run state }
+  (autoclose_element_p <|> tag_element_p (* <|> fail "<nieznany xml_obiekt>" *) ).run state }
 
 
 let parser_run (p: 'a parser) (t: token array ref): ('a, error) result =
