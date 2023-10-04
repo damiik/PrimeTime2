@@ -194,7 +194,7 @@ let rec xml_to_elt request xml =
     | "div" -> 
       (match (List.fold_left get_childs2 [] el.childs) with
       |[] -> (div ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt request ch)::l) [] el.childs))
-      |x ->(div ~a:(get_a_attrib el.attributes) x)
+      |x ->(div ~a:(get_a_attrib el.attributes) x) (* xml_to_elt must be added also here *)
       )
     | n -> div ~a:(get_a_attrib el.attributes) [(txt n)]
     )
@@ -230,18 +230,23 @@ let html_string =
 </div>
 
 |}  *)
-{|
-<div style="color: #ede0ce;background-color: #1a1b1d;font-family: 'JetBrainsMono Nerd Font Mono', 'Droid Sans Mono', 'monospace', monospace;font-weight: normal;font-size: 16px;line-height: 22px;white-space: pre;">
-  <div><span style="color: #7a7267;">(* Copyright by Dariusz Mikołajczyk 2024 *)</span></div>
-  <div><span style="color: #92b55f;">type</span><span style="color: #ede0ce;">
-    </span><span style="color: #e8da5e;">token</span><span style="color: #ede0ce;"> </span><span style="color: #92b55f;">=</span><span style="color: #ede0ce;"> </span>
-  </div>
-  <div><span style="color: #ede0ce;"> </span><span style="color: #a0988e;">|</span><span style="color: #ede0ce;">
-    </span><span style="color: #487d76;">Tok_Less</span><span style="color: #ede0ce;"> </span><span
-      style="color: #a0988e;">of</span><span style="color: #ede0ce;"> </span><span
-      style="color: #487d76;">int</span><span style="color: #ede0ce;"> </span><span
-      style="color: #92b55f;">*</span><span style="color: #ede0ce;"> </span><span style="color: #487d76;">int</span>
-  </div>  
+{|<div style="color: #ede0ce;background-color: #1a1b1d;font-family: 'JetBrainsMono Nerd Font Mono', 'Droid Sans Mono', 'monospace', monospace;font-weight: normal;font-size: 16px;line-height: 22px;white-space: pre;">
+<div>
+  <span style="color: #7a7267;">(* Copyright by Dariusz Mikołajczyk 2024 *)</span>
+</div>
+<div> 
+  <div>
+  <span style="color: #92b55f;">type</span>
+  <span style="color: #ede1ce;"> </span>
+  <span style="color: #e8da5e;">token</span>
+  <span style="color: #ede0ce;"> </span>
+ </div><div>
+  <span style="color: #92b55f;">=</span>
+  <span style="color: #ede0ce;"> </span>
+ <br/><br/><br/>
+  <span>Ala ma kota </span>
+ </div>
+</div>
 </div>
 |}
 let display_row request row =
@@ -265,6 +270,7 @@ in
   let open Tyxml.Html in
   let row_div = if row.kind_of = RawHtml then 
     let tokens : Lexer.token list = Lexer.tokenize row.data in
+    Dream.log "%s" (Lexer.tokensl2str tokens);
     match( Array.of_list tokens |> ref) |> Parser.parser_run Parser.tag_element_p with
     | Ok e -> xml_to_elt request e 
     | Error {desc =e; token_ix=_} -> (txt  (Printf.sprintf "Html parser error:%s" e ))

@@ -151,13 +151,13 @@ let is_a (t: token) : bool parser = {
     assert (state.token_ix < (Array.length !( state.tokens )));
     let curr_token = !( state.tokens ).( state.token_ix ) in
     let (line, column) = Lexer.token2pos curr_token in
-    printf "is_a %s ? %s\n"  (token2str t) (token2str curr_token);
+    (* printf "is_a %s ? %s\n"  (token2str t) (token2str curr_token); *)
     if (tokenCompare !( state.tokens ).( state.token_ix ) t true)  then  (
 
       (state_next_token state), Ok true
     )
     else 
-      state, Error ( sprintf ": Not a %s at: (line %d, column %d) [%s] " (t |> token2str) line column  (token2str curr_token))
+      state, Error ( sprintf ": Not a %s at: (line:%d, col:%d) [%s] " (t |> token2str) line column  (token2str curr_token))
 }
 
 
@@ -180,11 +180,26 @@ and tag_element = {
 let name_p: string parser = {
   run = fun state -> 
    
-    match !( state.tokens ).( state.token_ix ) with (* określić aktualną pozycję jako pole w state lub obliczać później *)
+    let curr_token = !( state.tokens ).( state.token_ix ) in
+    let (line, column) = Lexer.token2pos curr_token in
+    match curr_token with (* określić aktualną pozycję jako pole w state lub obliczać później *)
     | Tok_Word (l_str, _, _) -> 
          {state with token_ix = (state.token_ix + 1); }, Ok l_str
     | token -> 
-      state, Error ( sprintf ": Element name expected but got: %s at: [%d] " (token2str token) state.token_ix)
+      state, Error ( sprintf ": Name (Tok_Word) expected but got: >%s< at: (line:%d, col:%d) " (token2str token) line column)
+}
+
+(* tag name, attribute name. Have only letters, digits, '_' and '-' characters *)
+let keyword_p s: string parser = {
+  run = fun state -> 
+    let curr_token = !( state.tokens ).( state.token_ix ) in
+    let (line, column) = Lexer.token2pos curr_token in
+    match curr_token with (* określić aktualną pozycję jako pole w state lub obliczać później *)
+    | Tok_Word (l_str, _, _) -> 
+      if l_str = s then {state with token_ix = (state.token_ix + 1); }, Ok l_str
+      else state, Error ( sprintf ": Keyword >%s< expected but got keyword: >%s< at: (lin:%d, col%d)" s l_str line column)
+    | token -> 
+      state, Error ( sprintf ": Keyword >%s< expected but got token: >%s< at: (line:%d, col:%d)" s (token2str token) line column)
 }
 
 let string_to_char_list s =
@@ -210,11 +225,13 @@ let from_amp s =
 let string_p: string parser = {
   run = fun state -> 
    
-    match !( state.tokens ).( state.token_ix ) with (* określić aktualną pozycję jako pole w state lub obliczać później *)
+    let curr_token = !( state.tokens ).( state.token_ix ) in
+    let (line, column) = Lexer.token2pos curr_token in
+    match curr_token with (* określić aktualną pozycję jako pole w state lub obliczać później *)
     | Tok_String(l_str, _, _) -> 
          {state with token_ix = (state.token_ix + 1); }, Ok (from_amp l_str)
     | token -> 
-      state, Error ( sprintf ": Element string expected but got: %s at: [%d] " (token2str token) state.token_ix)
+      state, Error ( sprintf ": String (Tok_String) expected but got: >%s< at: (line:%d, col:%d) " (token2str token) line column)
 }
 
 
@@ -222,13 +239,14 @@ let string_p: string parser = {
 (* text is everyting between '>' and '<' characters *)
 let text_p: xml_object parser = {
   run = fun state -> 
-   
-    match !( state.tokens ).( state.token_ix ) with (* określić aktualną pozycję jako pole w state lub obliczać później *)
+    let curr_token = !( state.tokens ).( state.token_ix ) in
+    let (line, column) = Lexer.token2pos curr_token in
+    match curr_token with (* określić aktualną pozycję jako pole w state lub obliczać później *)
     | Tok_Text (l_str, _, _) ->
           (* let pos = Str.search_forward (Str.regexp {|&\([^;]*\);|}) l_str 1 in  *)
          {state with token_ix = (state.token_ix + 1); }, Ok (Text_El (from_amp l_str))
     | token -> 
-      state, Error ( sprintf ": Element data expected but got: %s at: [%d] " (token2str token) state.token_ix)
+      state, Error ( sprintf ": Text data (Tok_Text) element expected but got: >%s< at: (line:%d, col:%d) " (token2str token) line column)
 }
 
 let attribute_p: (string * string) parser = 
@@ -245,18 +263,24 @@ let element_end_p : string parser =
     fun (name) -> return name
 
 let autoclose_element_p : xml_object parser =  
-      ((is_a (Tok_Less(0,0))) *> (name_p <*> zeroOrMore attribute_p) <* (is_a (Tok_Slash(0,0))) <* (is_a (Tok_More(0,0))) >>= 
+      ((is_a (Tok_Less(0,0))) *> (name_p <*> zeroOrMore attribute_p) <* (is_a (Tok_Slash(0,0))) <* (is_a (Tok_More(0,0))) <* zeroOrMore text_p >>= 
         fun (n, l) -> return (Tag_El {name = n; childs = []; attributes = l}))
 
-(* recursive parser must have this form *)
+let br_element_p : xml_object parser =  
+  ((is_a (Tok_Less(0,0))) *> (keyword_p "br") <* (is_a (Tok_More(0,0))) <* zeroOrMore text_p >>= 
+    fun _ -> return (Tag_El {name = "br"; childs = []; attributes = []}))
+
+    (* recursive parser must have this form *)
 let rec tag_element_p : xml_object parser = 
   { run = fun state -> state |> (
   element_init_p <*> (((zeroOrMore text_p) *> (oneOrMore xml_object_p)) <|> (oneOrMore text_p)) <*> element_end_p <* zeroOrMore text_p >>= 
     fun ((e, ch), end_tag) ->
       match (e, ch) with 
-      | (Tag_El e1, ch) -> 
+      | (Tag_El e1, ch) ->     
+          let curr_token = !( state.tokens ).( state.token_ix ) in
+          let (line, column) = Lexer.token2pos curr_token in
           e1.childs <- ch;
-          if (String.compare e1.name end_tag) <> 0 then (fail (sprintf " ** Open tag:<%s> is different than close tag:</%s> ** " e1.name end_tag))
+          if (String.compare e1.name end_tag) <> 0 then (fail (sprintf " ** Open tag:<%s> is different than close tag:</%s> at (line:%d, col:%d) " e1.name end_tag line column))
           else return (Tag_El e1)
       | (e2, _) -> return e2 
   ).run
@@ -277,7 +301,7 @@ and xml_object_p : xml_object parser = {
 *)
 and xml_object_p : xml_object parser = { run = fun state ->
   
-  (autoclose_element_p <|> tag_element_p (* <|> fail "<nieznany xml_obiekt>" *) ).run state }
+  (br_element_p <|> autoclose_element_p <|> tag_element_p  (* <|> fail "<nieznany xml_obiekt>" *) ).run state }
 
 
 let parser_run (p: 'a parser) (t: token array ref): ('a, error) result =

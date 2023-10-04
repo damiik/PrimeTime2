@@ -84,15 +84,15 @@ let tokenize s =
   let token2str (t: token) : string =
 
     match t with
-      | Tok_Less(_,_) -> "(<)"
-      | Tok_More(_,_) -> "(>)"
-      | Tok_Equ(_,_) -> "(=)"
-      | Tok_Slash(_,_) -> "(/)"
-      | Tok_Word (s,_,_) -> Printf.sprintf "(%s)" s  
-      | Tok_String (s,_,_) -> Printf.sprintf "(\"%s\")" s  
-      | Tok_Text (s,_,_) -> Printf.sprintf "_(%s)_" s  
-      | Tok_NewL(_,_) -> "<new_l>"
-      | Tok_End(_,_) -> "(Tok_End)"
+      | Tok_Less(_,_) -> "Tok_Less(<)"
+      | Tok_More(_,_) -> "Tok_More(>)"
+      | Tok_Equ(_,_) -> "Tok_Equ(=)"
+      | Tok_Slash(_,_) -> "Tok_Slash(/)"
+      | Tok_Word (s,_,_) -> Printf.sprintf "Tok_Word(%s)" s  
+      | Tok_String (s,_,_) -> Printf.sprintf "Tok_String(\"%s\")" s  
+      | Tok_Text (s,_,_) -> Printf.sprintf "Tok_Text(%s)" s  
+      | Tok_NewL(_,_) -> "Tok_NewL()"
+      | Tok_End(_,_) -> "Tok_End()"
 
 let token2pos (t: token) : int*int =
 
