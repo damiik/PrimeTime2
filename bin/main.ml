@@ -79,18 +79,51 @@ let edit_form request row =
   ]
 
 
-
 let get_a_attrib attrib_list =  
   let open Tyxml.Html in 
-  let a_class_attrib =match List.filter (fun (n,_) -> n = "class") attrib_list with
-  | [(_,s)] -> String.split_on_char ' ' s
-  | _ -> [] 
-  in
-  let a_style_attrib = match List.filter (fun (n,_) -> n = "style") attrib_list with
-  | [(_,s)] -> s
-  | _ -> ""
-  in
-  [a_class a_class_attrib; a_style a_style_attrib]
+  let r0 = [] in
+
+  let r1 = (match List.filter (fun (n,_) -> n = "class") attrib_list with
+    | [(_,s)] -> (a_class (String.split_on_char ' ' s))::r0
+    | _ -> r0) in
+  
+  let r2 = (match List.filter (fun (n,_) -> n = "style") attrib_list with
+    | [(_,s)] -> (a_style s)::r1
+    | _ -> r1) in
+
+  r2
+;;
+
+let get_iframe_attrib attrib_list =  
+  let open Tyxml.Html in 
+  let r0 = [] in
+
+  let r1 = (match List.filter (fun (n,_) -> n = "class") attrib_list with
+    | [(_,s)] -> (a_class (String.split_on_char ' ' s))::r0
+    | _ -> r0) in
+  
+  let r2 = (match List.filter (fun (n,_) -> n = "style") attrib_list with
+    | [(_,s)] -> (a_style s)::r1
+    | _ -> r1) in
+  
+  let r3 = (match List.filter (fun (n,_) -> n = "src") attrib_list with
+    | [(_,s)] -> (a_src s)::r2
+    | _ -> r2) in
+  
+  let r4 = (match List.filter (fun (n,_) -> n = "width") attrib_list with
+    | [(_,s)] -> (a_width (int_of_string s))::r3
+    | _ -> r3) in
+
+  let r5 = (match List.filter (fun (n,_) -> n = "height") attrib_list with
+    | [(_,s)] -> (a_height (int_of_string s))::r4
+    | _ -> r4) in
+
+  let r6 = (match List.filter (fun (n,_) -> n = "allowfullscreen") attrib_list with
+    | [(_,_)] -> (a_allowfullscreen ())::r5
+    | _ -> r5) in
+
+  r6
+;;
 
 
 (*
@@ -162,6 +195,7 @@ let rec xml_to_elt2 xml =
     | "i" -> Some (i ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
     | "span" -> Some (span ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
     | "br" -> Some (br ~a:(get_a_attrib el.attributes) ())
+    | "iframe" -> Some (iframe ~a:(get_iframe_attrib el.attributes) [])
     | _ -> None
     )
   | Text_El t -> Some (txt t)
@@ -187,7 +221,7 @@ let xml_to_elt_li xml =
   (* type t3 = [< Html_types.div_content_fun >`Div| `H1 |`H2 |`H3| `H4 |`H5 |`H6 |`P |`Ul ] elt list *)
 let rec xml_to_elt xml =   
   let open Tyxml.Html in
-  let l2  :([< Html_types.div_content ] elt) option = 
+  let l2 :([< Html_types.div_content ] elt) option = 
   match xml with 
   | Parser.Tag_El el -> (
 
@@ -201,14 +235,16 @@ let rec xml_to_elt xml =
     | "p" -> Some (p ~a:(get_a_attrib el.attributes) (List.fold_left get_phrasing_ch [] el.childs))
     | "ul" -> Some (ul ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt_li ch)::l) [] el.childs))
     | "div" -> 
-      (match (List.fold_left get_childs2 [] el.childs) with
-      |[] -> Some (div ~a:(get_a_attrib el.attributes) (List.fold_left get_flow_ch [] el.childs))
-      |x ->
-        let ch2 = (List.fold_left get_flow_ch [] el.childs) in
-        let ch3 = x@ch2 in
-        Some (div ~a:(get_a_attrib el.attributes) ch3) (* xml_to_elt must be added also here *)
-      )
-    (* | n -> div ~a:(get_a_attrib el.attributes) [txt (String.concat "-" [n ;"div??"])] *)
+      Some (div ~a:(get_a_attrib el.attributes) ( 
+        (List.fold_left get_childs2 [] el.childs) @ 
+        (List.fold_left get_flow_ch [] el.childs) 
+      )) (* xml_to_elt must be added also here *)
+      
+    | "blockquote" -> 
+      Some (blockquote ~a:(get_a_attrib el.attributes) ( 
+        (List.fold_left get_childs2 [] el.childs) @ 
+        (List.fold_left get_flow_ch [] el.childs) 
+      )) (* xml_to_elt must be added also here *)
       | _ -> None
     )
   | Text_El t -> Some (div [txt (String.concat "-" [t ;"??div"])])
@@ -245,8 +281,8 @@ let html_string =
         <li><b>3. C</b></li>
     </ul>
 </div>
-|}  *)
-{|<div style="color: #ede0ce;background-color: #1a1b1d;font-family: 'JetBrainsMono Nerd Font Mono', 'Droid Sans Mono', 'monospace', monospace;font-weight: normal;font-size: 20px;line-height: 30px; white-space: pre;">
+|}  *){|<blockquote class="bg-[#232123] shadow-2xl shadow-2xl p-3 rounded-md">
+<div style="color: #ede0ce;font-family: 'JetBrainsMono Nerd Font Mono', 'Droid Sans Mono', 'monospace', monospace;font-weight: normal;font-size: 20px;line-height: 30px; white-space: pre;">
   <div><span style="color: #7a7267;">(* Copyright by Dariusz Mikołajczyk 2024 *)</span></div>
   <div><span style="color: #92b55f;">type</span><span style="color: #ede0ce;"> </span>
 <span style="color: #e8da5e;">token</span><span style="color: #ede0ce;"> </span>
@@ -257,7 +293,11 @@ let html_string =
 <span style="color: #92b55f;">*</span><span style="color: #ede0ce;"> </span><span style="color: #487d76;">int</span>
   </div>
 </div>
-
+<p class="flex justify-center">
+<iframe src="https://www.youtube.com/embed/cghRTcD__k4" width="560" height="314" allowfullscreen="allowfullscreen">
+</iframe>
+</p>
+</blockquote>
 |} 
 (* {|<div style="color: #ede0ce;background-color: #1a1b1d;font-family: 'JetBrainsMono Nerd Font Mono', 'Droid Sans Mono', 'monospace', monospace;font-weight: normal;font-size: 20px;line-height: 30px; white-space: pre;">
 <div>
