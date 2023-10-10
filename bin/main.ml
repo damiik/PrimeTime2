@@ -153,6 +153,7 @@ let get_a_attrib attrib_list =
 
 let rec xml_to_elt2 xml =   
   let open Tyxml.Html in
+  let l  :[< Html_types.core_phrasing ] elt option = 
   match xml with 
   | Parser.Tag_El el -> (
     match el.name with
@@ -164,8 +165,13 @@ let rec xml_to_elt2 xml =
     | _ -> None
     )
   | Text_El t -> Some (txt t)
+  in
+  l
 
-and get_childs2 l ch = match (xml_to_elt2 ch) with | Some e -> e::l | None -> l
+and get_childs2 l ch = 
+  match (xml_to_elt2 ch) with 
+  | Some e -> e::l 
+  | None -> l
 
 
 let xml_to_elt_li xml =   
@@ -176,30 +182,53 @@ let xml_to_elt_li xml =
       | "li" -> (li ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> match (xml_to_elt2  ch) with |Some e -> e::l| None -> l) [] el.childs))
       | n -> li [txt n]
     )
-    | Text_El t -> li [txt t]
+    | Text_El t -> li [txt (String.concat "-" [t ;"??li"])] 
 
-let rec xml_to_elt request xml =   
+  (* type t3 = [< Html_types.div_content_fun >`Div| `H1 |`H2 |`H3| `H4 |`H5 |`H6 |`P |`Ul ] elt list *)
+let rec xml_to_elt xml =   
   let open Tyxml.Html in
+  let l2  :([< Html_types.div_content ] elt) option = 
   match xml with 
   | Parser.Tag_El el -> (
+
     match el.name with
-    | "p" -> (p ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
-    | "h1" -> (h1 ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
-    | "h2" -> (h2 ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
-    | "h3" -> (h3 ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
-    | "h4" -> (h4 ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
-    | "h5" -> (h5 ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
-    | "h6" -> (h6 ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
-    | "ul" -> (ul ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt_li ch)::l) [] el.childs))
+    | "h1" -> Some (h1 ~a:(get_a_attrib el.attributes) (List.fold_left get_phrasing_ch [] el.childs))
+    | "h2" -> Some (h2 ~a:(get_a_attrib el.attributes) (List.fold_left get_phrasing_ch [] el.childs))
+    | "h3" -> Some (h3 ~a:(get_a_attrib el.attributes) (List.fold_left get_phrasing_ch [] el.childs))
+    | "h4" -> Some (h4 ~a:(get_a_attrib el.attributes) (List.fold_left get_phrasing_ch [] el.childs))
+    | "h5" -> Some (h5 ~a:(get_a_attrib el.attributes) (List.fold_left get_phrasing_ch [] el.childs))
+    | "h6" -> Some (h6 ~a:(get_a_attrib el.attributes) (List.fold_left get_phrasing_ch [] el.childs))  
+    | "p" -> Some (p ~a:(get_a_attrib el.attributes) (List.fold_left get_phrasing_ch [] el.childs))
+    | "ul" -> Some (ul ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt_li ch)::l) [] el.childs))
     | "div" -> 
       (match (List.fold_left get_childs2 [] el.childs) with
-      |[] -> (div ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt request ch)::l) [] el.childs))
-      |x ->(div ~a:(get_a_attrib el.attributes) x) (* xml_to_elt must be added also here *)
+      |[] -> Some (div ~a:(get_a_attrib el.attributes) (List.fold_left get_flow_ch [] el.childs))
+      |x ->
+        let ch2 = (List.fold_left get_flow_ch [] el.childs) in
+        let ch3 = x@ch2 in
+        Some (div ~a:(get_a_attrib el.attributes) ch3) (* xml_to_elt must be added also here *)
       )
-    | n -> div ~a:(get_a_attrib el.attributes) [(txt n)]
+    (* | n -> div ~a:(get_a_attrib el.attributes) [txt (String.concat "-" [n ;"div??"])] *)
+      | _ -> None
     )
-  | Text_El t -> div [(txt t)]
-  and get_childs2 l ch = match (xml_to_elt2 ch) with | Some e -> e::l | None -> l
+  | Text_El t -> Some (div [txt (String.concat "-" [t ;"??div"])])
+  in 
+  l2
+
+and get_childs2 (l (*:[< Html_types.phrasing > `B `Br `I `PCDATA `Span `U ] Tyxml_html.elt Tyxml_html.list_wrap*) )  ch = 
+  match (xml_to_elt2 ch) with 
+    | Some e -> (e :> Html_types.body_content_fun Tyxml_html.elt) :: l  (*promote this type to body_content*)
+    | None -> l
+
+and get_phrasing_ch l ch = 
+    match (xml_to_elt2 ch) with 
+    | Some e -> e::l 
+    | None -> l 
+  
+and get_flow_ch l ch = 
+    match (xml_to_elt ch) with 
+    | Some e -> e::l 
+    | None -> l     
 let html_string = 
  (* {|<body class="bg-stone-700 text-yellow-400 text-xl font-['Nunito_Sans']"><div  class="bg-stone-900 grid grid-cols-4 gap-4 p-6"><div class="bg-stone-850 text-white col-span-1"><div class="p-4 scrolling-sidebar"><h1 class="text-2xl font-semibold">Sidebar</h1><ul class="mt-4"><li class="mb-2"><a href="#" class="hover:text-lime-600">Dashboard</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Products</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Customers</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Orders</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Settings22</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Dashboard</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Products</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Customers</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Orders</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Settings22</a></li></ul></div></div><main class="col-span-3 p-6 rounded shadow"><div class="list"><div class="row_class"><div class="name">foo1</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;1&quot;,&quot;dream.csrf&quot;:&quot;ADWnGwb3lRsn0_jqFbxk_k88vE2RTovl9Q4AZKR29UfN-H45TsRgLfaRGS6maS16aktp9txD8Srk_Un_1ZYAWcy4lIvpbaSClOGo571HpiVO&quot;}">Zapytania HTTP mogą być generowane z dowolnych elementów (nie tylko z &lt;a&gt; lub &lt;form&gt;)</div></div><div class="row_class"><div class="name">foo2</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;2&quot;,&quot;dream.csrf&quot;:&quot;AG-limB7nv-J4mFC5PqqKY4zj3jZIa8gJJBeVc4ecjtXjq73bw1vImD8JLeKapV7Po-Eh5HBhZAZpaB9frR628Jj-9vtlHqdV-PoCdCMVnas&quot;}">Zapytania HTTP mogą być genrewane przez dowolne zdarzenia (nie tylko przez &quot;click&quot; i &quot;submit&quot;)</div></div><div class="row_class"><div class="name">foo4</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;4&quot;,&quot;dream.csrf&quot;:&quot;ANThgIAIBdGxw0TlGes8pMzaHeQtOMRoKVp6wy3HxWGMOMtkAk_IPfjgSl0wjzViO-wPhTRRDxv7w4EHjV1Y2bzNts54xmvXsIYw093ngyz0&quot;}">Zastępowana może być dowolna część dokumentu HTML (nie cały dokument)</div></div><div class="row_class"><div class="name">foo5</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;5&quot;,&quot;dream.csrf&quot;:&quot;AKTD3YnxAfokc2fFa3be-QoHJfcNIAiOK506Brx99xCEmL6rDi0pxR4Q6gUaU4I9RorQpZbBsNgzCCrMWXv4CztZSJPZuZRDgCdFIGZ8hWQ6&quot;}">Strony mogą być przeładowywane bez ponownego wczytywania nagłówków (a więc css'ów, fontów itp).</div></div><div class="row_class"><div class="name">foo6</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;6&quot;,&quot;dream.csrf&quot;:&quot;AD7JVtNspWcfTkr6b-BGwX-chgGf33HbHUw13x0ue1tY1NEqxXbZdM35D7WfTGb6FqR-eEQHnY_kvFcPL1MVKHW-Y8JJggEp8DYXUNG5KYxg&quot;}">&lt;p&gt;Ogólnie &lt;b&gt;idea&lt;/b&gt; jest taka, żeby &lt;i&gt;odświeżać&lt;/i&gt; tylko elementy strony które wymagają odświeżenia&lt;/p&gt;</div></div></div></main></div></body>
  
@@ -217,7 +246,7 @@ let html_string =
     </ul>
 </div>
 |}  *)
-(* {|<div style="color: #ede0ce;background-color: #1a1b1d;font-family: 'JetBrainsMono Nerd Font Mono', 'Droid Sans Mono', 'monospace', monospace;font-weight: normal;font-size: 16px;line-height: 22px;white-space: pre;">
+{|<div style="color: #ede0ce;background-color: #1a1b1d;font-family: 'JetBrainsMono Nerd Font Mono', 'Droid Sans Mono', 'monospace', monospace;font-weight: normal;font-size: 20px;line-height: 30px; white-space: pre;">
   <div><span style="color: #7a7267;">(* Copyright by Dariusz Mikołajczyk 2024 *)</span></div>
   <div><span style="color: #92b55f;">type</span><span style="color: #ede0ce;"> </span>
 <span style="color: #e8da5e;">token</span><span style="color: #ede0ce;"> </span>
@@ -229,8 +258,8 @@ let html_string =
   </div>
 </div>
 
-|}  *)
-{|<div style="color: #ede0ce;background-color: #1a1b1d;font-family: 'JetBrainsMono Nerd Font Mono', 'Droid Sans Mono', 'monospace', monospace;font-weight: normal;font-size: 16px;line-height: 22px;white-space: pre;">
+|} 
+(* {|<div style="color: #ede0ce;background-color: #1a1b1d;font-family: 'JetBrainsMono Nerd Font Mono', 'Droid Sans Mono', 'monospace', monospace;font-weight: normal;font-size: 20px;line-height: 30px; white-space: pre;">
 <div>
   <span style="color: #7a7267;">(* Copyright by Dariusz Mikołajczyk 2024 *)</span>
 </div>
@@ -248,7 +277,7 @@ let html_string =
  </div>
 </div>
 </div>
-|}
+|} *)
 let display_row request row =
   let vals = Printf.sprintf "{\"row_id\":\"%d\",\"dream.csrf\":\"%s\"}" row.id (Dream.csrf_token request) in
  
@@ -270,9 +299,13 @@ in
   let open Tyxml.Html in
   let row_div = if row.kind_of = RawHtml then 
     let tokens : Lexer.token list = Lexer.tokenize row.data in
-    Dream.log "%s" (Lexer.tokensl2str tokens);
+    (* Dream.log "%s" (Lexer.tokensl2str tokens); *)
     match( Array.of_list tokens |> ref) |> Parser.parser_run Parser.tag_element_p with
-    | Ok e -> xml_to_elt request e 
+    | Ok e -> (match (xml_to_elt e) with
+
+          |Some e' -> e'
+          |None -> (div [txt ""])
+    )
     | Error {desc =e; token_ix=_} -> (txt  (Printf.sprintf "Html parser error:%s" e ))
   
   else (txt row.data) in
