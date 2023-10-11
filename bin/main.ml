@@ -2,6 +2,11 @@ open Cool_lib (* modules: Styles, Icons *)
 open Layouts  (* modules: Sidebard, Head *)
 open Html_parser
 
+(*todo*)
+(*
+html element attributes without values   
+required newlines between tags
+*)
 
 
 let elt_to_string elt = Fmt.str "%a" (Tyxml.Html.pp_elt()) elt
@@ -79,110 +84,34 @@ let edit_form request row =
   ]
 
 
+(* helper function for searching key with attribute and appl. fun. f to value and return attrib list *)
+let search_attr a f (l, r) = (match List.filter (fun (n,_) -> n = a) l with
+  | [(_,s)] -> (l, (f s)::r)
+  | _ -> (l, r))
+
 let get_a_attrib attrib_list =  
   let open Tyxml.Html in 
-  let r0 = [] in
+  let (_, res) = (attrib_list, []) |> 
+  (search_attr "class"  (fun a -> a_class (String.split_on_char ' ' a))) |> (* wrap function to convert argument to list of classes *)
+  (search_attr "style"   a_style) in
+  res
 
-  let r1 = (match List.filter (fun (n,_) -> n = "class") attrib_list with
-    | [(_,s)] -> (a_class (String.split_on_char ' ' s))::r0
-    | _ -> r0) in
-  
-  let r2 = (match List.filter (fun (n,_) -> n = "style") attrib_list with
-    | [(_,s)] -> (a_style s)::r1
-    | _ -> r1) in
-
-  r2
-;;
 
 let get_iframe_attrib attrib_list =  
   let open Tyxml.Html in 
-  let r0 = [] in
 
-  let r1 = (match List.filter (fun (n,_) -> n = "class") attrib_list with
-    | [(_,s)] -> (a_class (String.split_on_char ' ' s))::r0
-    | _ -> r0) in
-  
-  let r2 = (match List.filter (fun (n,_) -> n = "style") attrib_list with
-    | [(_,s)] -> (a_style s)::r1
-    | _ -> r1) in
-  
-  let r3 = (match List.filter (fun (n,_) -> n = "src") attrib_list with
-    | [(_,s)] -> (a_src s)::r2
-    | _ -> r2) in
-  
-  let r4 = (match List.filter (fun (n,_) -> n = "width") attrib_list with
-    | [(_,s)] -> (a_width (int_of_string s))::r3
-    | _ -> r3) in
+  let (_, res) = (attrib_list, []) |> 
+  (search_attr "class"  (fun a -> a_class (String.split_on_char ' ' a))) |> (* wrap function to convert argument to list of classes *)
+  (search_attr "style"   a_style) |>
+  (search_attr "title"   a_title) |>
+  (search_attr "src"     a_src) |>
+  (search_attr "allow"  (fun _ -> a_name "")) |> (* ignored *)
+  (search_attr "frameborder"  (fun _ -> a_name "" )) |>  (* ignored *)
+  (search_attr "width"  (fun a -> a_width  (int_of_string a))) |>  (* wrap function to convert argument to int *)
+  (search_attr "height" (fun a -> a_height (int_of_string a))) |>  (* wrap function to convert argument to int *)
+  (search_attr "allowfullscreen" (fun _ -> a_allowfullscreen ())) in (* wrap function to ignore argument of a_allowfullscreen *)
+  res
 
-  let r5 = (match List.filter (fun (n,_) -> n = "height") attrib_list with
-    | [(_,s)] -> (a_height (int_of_string s))::r4
-    | _ -> r4) in
-
-  let r6 = (match List.filter (fun (n,_) -> n = "allowfullscreen") attrib_list with
-    | [(_,_)] -> (a_allowfullscreen ())::r5
-    | _ -> r5) in
-
-  r6
-;;
-
-
-(*
-  `A of Html_types.phrasing_without_interactive
-  | `Abbr
-  | `Audio of Html_types.phrasing_without_media
-  | `Audio_interactive of Html_types.phrasing_without_media
-  | `B
-  | `Bdo
-  | `Br
-  | `Button
-  | `Canvas of Html_types.phrasing
-  | `Cite
-  | `Code
-  | `Command
-  | `Datalist
-  | `Del of Html_types.phrasing
-  | `Dfn
-  | `Em
-  | `Embed
-  | `I
-  | `Iframe
-  | `Img
-  | `Img_interactive
-  | `Input
-  | `Ins of Html_types.phrasing
-  | `Kbd
-  | `Keygen
-  | `Label
-  | `Map of Html_types.phrasing
-  | `Mark
-  | `Meter
-  | `Noscript of Html_types.phrasing_without_noscript
-  | `Object of Html_types.phrasing
-  | `Object_interactive of Html_types.phrasing
-  | `Output
-  | `PCDATA
-  | `Picture
-  | `Progress
-  | `Q
-  | `Ruby
-  | `Samp
-  | `Script
-  | `Select
-  | `Small
-  | `Span
-  | `Strong
-  | `Sub
-  | `Sup
-  | `Svg
-  | `Template
-  | `Textarea
-  | `Time
-  | `U
-  | `Var
-  | `Video of Html_types.phrasing_without_media
-  | `Video_interactive of Html_types.phrasing_without_media
-  | `Wbr
-*)
 
 let rec xml_to_elt2 xml =   
   let open Tyxml.Html in
@@ -294,7 +223,7 @@ let html_string =
   </div>
 </div>
 <p class="flex justify-center">
-<iframe src="https://www.youtube.com/embed/cghRTcD__k4" width="560" height="314" allowfullscreen="allowfullscreen">
+<iframe width="1854" height="756" src="https://www.youtube.com/embed/YMuBBEMV-7M?list=RDYMuBBEMV-7M" title="Lady, Lady, Lady - Joe Esposito (Ana de Armas)" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="" >
 </iframe>
 </p>
 </blockquote>
