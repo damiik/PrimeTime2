@@ -101,6 +101,7 @@ let get_href_attrib attrib_list =
   let (_, res) = (attrib_list, []) |> 
   (search_attr "class"  (fun a -> a_class (String.split_on_char ' ' a))) |> (* wrap function to convert argument to list of classes *)
   (search_attr "href"     a_href) |>
+  (search_attr "title"     a_title) |>
   (search_attr "style"   a_style) in
   res
 
@@ -121,7 +122,7 @@ let get_iframe_attrib attrib_list =
   res
 
 
-let rec xml_to_elt2 xml =   
+let rec xml_to_phrasing_nointer xml =   
   let open Tyxml.Html in
   let l : [< Html_types.core_phrasing_without_interactive ] elt option = 
   match xml with 
@@ -129,7 +130,6 @@ let rec xml_to_elt2 xml =
     match el.name with
     | "strong" -> Some (strong ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
     | "small" -> Some (small ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
-    | "em" -> Some (em ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
     | "u" -> Some (u ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
     | "b" -> Some (b ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
     | "i" -> Some (i ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
@@ -143,7 +143,27 @@ let rec xml_to_elt2 xml =
   l
 
 and get_childs2 l ch = 
-  match (xml_to_elt2 ch) with 
+  match (xml_to_phrasing_nointer ch) with 
+  | Some e -> e::l 
+  | None -> l
+
+
+let rec xml_to_phrasing xml =   
+  let open Tyxml.Html in
+  let l : [< Html_types.core_phrasing ] elt option = 
+  match xml with 
+  | Parser.Tag_El el -> (
+    match el.name with
+    | "iframe" -> Some (iframe ~a:(get_iframe_attrib el.attributes) [])
+    | "em" -> Some (em ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
+    | _ -> None
+    )
+  | Text_El t -> Some (txt t)
+  in
+  l
+
+and get_childs2 l ch = 
+  match (xml_to_phrasing ch) with 
   | Some e -> e::l 
   | None -> l
 
@@ -153,7 +173,7 @@ let xml_to_elt_li xml =
     match xml with 
     | Parser.Tag_El el -> (
       match el.name with
-      | "li" -> (li ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> match (xml_to_elt2  ch) with |Some e -> e::l| None -> l) [] el.childs))
+      | "li" -> (li ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> match (xml_to_phrasing_nointer  ch) with |Some e -> e::l| None -> l) [] el.childs))
       | n -> li [txt n]
     )
     | Text_El t -> li [txt (String.concat "-" [t ;"??li"])] 
@@ -175,8 +195,7 @@ let rec xml_to_elt xml =
     | "h6" -> Some (h6 ~a:(get_a_attrib el.attributes) (List.fold_left get_phrasing_ch [] el.childs))  
     | "p" -> Some (p ~a:(get_a_attrib el.attributes) (List.fold_left get_phrasing_ch [] el.childs))
     | "ul" -> Some (ul ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt_li ch)::l) [] el.childs))
-    | "a" -> Some (a ~a:(get_href_attrib el.attributes) (List.fold_left get_without_interactive_ch [] el.childs))
-    | "iframe" -> Some (iframe ~a:(get_iframe_attrib el.attributes) [])
+    | "a" -> Some (a ~a:(get_href_attrib el.attributes) (List.fold_left get_phrasing_nointer_ch [] el.childs))
     | "div" -> 
       Some (div ~a:(get_a_attrib el.attributes) ( 
         (List.fold_left get_childs2 [] el.childs) @ 
@@ -196,19 +215,20 @@ let rec xml_to_elt xml =
   l2
 
 and get_childs2 (l (*:[< Html_types.phrasing > `B `Br `I `PCDATA `Span `U ] Tyxml_html.elt Tyxml_html.list_wrap*) )  ch = 
-  match (xml_to_elt2 ch) with 
+  match (xml_to_phrasing_nointer ch) with 
     | Some e -> (e :> Html_types.body_content_fun Tyxml_html.elt) :: l  (*promote this type to body_content*)
     | None -> l
 
-and get_phrasing_ch l ch = 
-    match (xml_to_elt2 ch) with 
-    | Some e -> e::l 
-    | None -> l 
-  
-and get_without_interactive_ch l ch = 
-    match (xml_to_elt2 ch) with 
+and get_phrasing_nointer_ch l ch = 
+    match (xml_to_phrasing_nointer ch) with 
     | Some e -> (e :> Html_types.flow5_without_interactive Tyxml_html.elt )::l
     | None -> l 
+  
+and get_phrasing_ch l ch = 
+    match (xml_to_phrasing ch) with 
+    | Some e -> e::l 
+    | None -> (match (xml_to_phrasing_nointer ch) with |Some e -> (e:> Html_types.core_phrasing Tyxml_html.elt)::l |None -> l)
+  
   
 and get_flow_ch l ch = 
     match (xml_to_elt ch) with 
@@ -242,6 +262,9 @@ let html_string =
 <span style="color: #92b55f;">*</span><span style="color: #ede0ce;"> </span><span style="color: #487d76;">int</span>
   </div>
 </div>
+<p><em>⏩ <a title="ocaml-postgrest" href="https://github.com/carlosdagos/ocaml-postgrest">ocaml-postgrest</a></em></p>
+<br/>
+<br/>
 <p class="flex justify-center">
 <iframe width="1854" height="756" src="https://www.youtube.com/embed/YMuBBEMV-7M?list=RDYMuBBEMV-7M" title="Lady, Lady, Lady - Joe Esposito (Ana de Armas)" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="" >
 </iframe>
