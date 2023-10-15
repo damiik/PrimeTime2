@@ -121,19 +121,38 @@ let get_iframe_attrib attrib_list =
   (search_attr "allowfullscreen" (fun _ -> a_allowfullscreen ())) in (* wrap function to ignore argument of a_allowfullscreen *)
   res
 
-
-let rec xml_to_phrasing_nointer xml =   
+let xml_to_phrasing xml =   
   let open Tyxml.Html in
-  let l : [< Html_types.core_phrasing_without_interactive ] elt option = 
+  let l : [< Html_types.core_phrasing ] elt option = 
   match xml with 
   | Parser.Tag_El el -> (
     match el.name with
-    | "strong" -> Some (strong ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
-    | "small" -> Some (small ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
-    | "u" -> Some (u ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
-    | "b" -> Some (b ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
-    | "i" -> Some (i ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
-    | "span" -> Some (span ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
+    | "iframe" -> Some (iframe ~a:(get_iframe_attrib el.attributes) [])
+    | _ -> None
+    )
+  | Text_El t -> Some (txt t)
+  in
+  l
+
+
+  
+(* they are nointeractive but then can have interactive content *)
+let rec xml_to_phrasing_nointer xml =   
+  let open Tyxml.Html in
+  let l : [> Html_types.core_phrasing_without_interactive ] elt option = 
+  match xml with 
+  | Parser.Tag_El el -> (
+    match el.name with
+    | "strong" -> Some (strong ~a:(get_a_attrib el.attributes) (get_phrasing_ch el.childs))
+    | "small" -> Some (small ~a:(get_a_attrib el.attributes) (get_phrasing_ch el.childs))
+    | "u" -> Some (u ~a:(get_a_attrib el.attributes) (get_phrasing_ch el.childs))
+    | "b" -> Some (b ~a:(get_a_attrib el.attributes) (get_phrasing_ch el.childs))
+    | "i" -> Some (i ~a:(get_a_attrib el.attributes) (get_phrasing_ch el.childs))
+    | "span" -> Some (span ~a:(get_a_attrib el.attributes) (get_phrasing_ch el.childs))
+    | "cite" -> Some (cite ~a:(get_a_attrib el.attributes) (get_phrasing_ch el.childs))
+    | "code" -> Some (code ~a:(get_a_attrib el.attributes) (get_phrasing_ch el.childs))
+    | "em" -> Some (em ~a:(get_a_attrib el.attributes) ((get_phrasing_ch el.childs) :> Html_types.em_content Tyxml_html.elt list_wrap))
+    | "kbd" -> Some (kbd ~a:(get_a_attrib el.attributes) (get_phrasing_ch el.childs))
     | "br" -> Some (br ~a:(get_a_attrib el.attributes) ())
     | "wbr" -> Some (wbr ~a:(get_a_attrib el.attributes) ())
     | _ -> None
@@ -142,33 +161,11 @@ let rec xml_to_phrasing_nointer xml =
   in
   l
 
-and get_childs2 l ch = 
-  match (xml_to_phrasing_nointer ch) with 
-  | Some e -> e::l 
-  | None -> l
+  (* 
+  Img
+  Picture *)
 
-
-let rec xml_to_phrasing xml =   
-  let open Tyxml.Html in
-  let l : [< Html_types.core_phrasing ] elt option = 
-  match xml with 
-  | Parser.Tag_El el -> (
-    match el.name with
-    | "iframe" -> Some (iframe ~a:(get_iframe_attrib el.attributes) [])
-    | "em" -> Some (em ~a:(get_a_attrib el.attributes) (List.fold_left get_childs2 [] el.childs))
-    | _ -> None
-    )
-  | Text_El t -> Some (txt t)
-  in
-  l
-
-and get_childs2 l ch = 
-  match (xml_to_phrasing ch) with 
-  | Some e -> e::l 
-  | None -> l
-
-
-let xml_to_elt_li xml =   
+and xml_to_elt_li xml =   
     let open Tyxml.Html in
     match xml with 
     | Parser.Tag_El el -> (
@@ -180,33 +177,33 @@ let xml_to_elt_li xml =
 
 
   (* type t3 = [< Html_types.div_content_fun >`Div| `H1 |`H2 |`H3| `H4 |`H5 |`H6 |`P |`Ul ] elt list *)
-let rec xml_to_elt xml =   
+and xml_to_elt xml =
   let open Tyxml.Html in
-  let l2 :([< Html_types.div_content ] elt) option = 
+  let l2 :([> Html_types.flow5 ] elt) option = 
   match xml with 
   | Parser.Tag_El el -> (
 
     match el.name with
-    | "h1" -> Some (h1 ~a:(get_a_attrib el.attributes) (List.fold_left get_phrasing_ch [] el.childs))
-    | "h2" -> Some (h2 ~a:(get_a_attrib el.attributes) (List.fold_left get_phrasing_ch [] el.childs))
-    | "h3" -> Some (h3 ~a:(get_a_attrib el.attributes) (List.fold_left get_phrasing_ch [] el.childs))
-    | "h4" -> Some (h4 ~a:(get_a_attrib el.attributes) (List.fold_left get_phrasing_ch [] el.childs))
-    | "h5" -> Some (h5 ~a:(get_a_attrib el.attributes) (List.fold_left get_phrasing_ch [] el.childs))
-    | "h6" -> Some (h6 ~a:(get_a_attrib el.attributes) (List.fold_left get_phrasing_ch [] el.childs))  
-    | "p" -> Some (p ~a:(get_a_attrib el.attributes) (List.fold_left get_phrasing_ch [] el.childs))
+    | "h1" -> Some (h1 ~a:(get_a_attrib el.attributes) (get_phrasing_ch el.childs))
+    | "h2" -> Some (h2 ~a:(get_a_attrib el.attributes) (get_phrasing_ch el.childs))
+    | "h3" -> Some (h3 ~a:(get_a_attrib el.attributes) (get_phrasing_ch el.childs))
+    | "h4" -> Some (h4 ~a:(get_a_attrib el.attributes) (get_phrasing_ch el.childs))
+    | "h5" -> Some (h5 ~a:(get_a_attrib el.attributes) (get_phrasing_ch el.childs))
+    | "h6" -> Some (h6 ~a:(get_a_attrib el.attributes) (get_phrasing_ch el.childs))  
+    | "p" -> Some (p ~a:(get_a_attrib el.attributes) (get_phrasing_ch el.childs))
     | "ul" -> Some (ul ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt_li ch)::l) [] el.childs))
-    | "a" -> Some (a ~a:(get_href_attrib el.attributes) (List.fold_left get_phrasing_nointer_ch [] el.childs))
+    | "a" -> Some (a ~a:(get_href_attrib el.attributes) (get_phrasing_nointer_ch @@ el.childs :> Html_types.flow5_without_interactive elt list_wrap))
     | "div" -> 
       Some (div ~a:(get_a_attrib el.attributes) ( 
-        (List.fold_left get_childs2 [] el.childs) @ 
-        (List.fold_left get_flow_ch [] el.childs) 
+        ((get_phrasing_ch el.childs):> Html_types.flow5 Tyxml_html.elt list_wrap) @ 
+        ((get_flow_ch el.childs)  :> Html_types.flow5 Tyxml_html.elt list_wrap)
       )) (* xml_to_elt must be added also here *)
       
     | "blockquote" -> 
 
       Some (blockquote ~a:(get_a_attrib el.attributes) ( 
-        (List.fold_left get_childs2 [] el.childs) @ 
-        (List.fold_left get_flow_ch [] el.childs) 
+        ((get_phrasing_ch el.childs) :> Html_types.flow5 Tyxml_html.elt list_wrap) @ 
+        ((get_flow_ch el.childs) :> Html_types.flow5 Tyxml_html.elt list_wrap)
       )) (* xml_to_elt must be added also here *)
       | _ -> None
     )
@@ -214,27 +211,33 @@ let rec xml_to_elt xml =
   in 
   l2
 
-and get_childs2 (l (*:[< Html_types.phrasing > `B `Br `I `PCDATA `Span `U ] Tyxml_html.elt Tyxml_html.list_wrap*) )  ch = 
-  match (xml_to_phrasing_nointer ch) with 
-    | Some e -> (e :> Html_types.body_content_fun Tyxml_html.elt) :: l  (*promote this type to body_content*)
-    | None -> l
-
-and get_phrasing_nointer_ch l ch = 
+and get_phrasing_nointer_ch ch0 = 
+  List.fold_left (fun l ch ->
     match (xml_to_phrasing_nointer ch) with 
     | Some e -> (e :> Html_types.flow5_without_interactive Tyxml_html.elt )::l
-    | None -> l 
+    | None -> l
+  ) [] ch0
   
-and get_phrasing_ch l ch = 
+
+
+and get_phrasing_ch ch0 =
+  List.fold_left (fun l ch ->
     match (xml_to_phrasing ch) with 
     | Some e -> e::l 
     | None -> (match (xml_to_phrasing_nointer ch) with |Some e -> (e:> Html_types.core_phrasing Tyxml_html.elt)::l |None -> l)
-  
-  
-and get_flow_ch l ch = 
+  ) [] ch0
+
+
+
+and get_flow_ch ch0 = 
+  List.fold_left (fun l ch ->
     match (xml_to_elt ch) with 
     | Some e -> e::l (*(e :> Html_types.flow5 Tyxml_html.elt) ::l *)
-    | None -> l     
-let html_string = 
+    | None -> l
+  ) [] ch0
+
+
+    let html_string = 
  (* {|<body class="bg-stone-700 text-yellow-400 text-xl font-['Nunito_Sans']"><div  class="bg-stone-900 grid grid-cols-4 gap-4 p-6"><div class="bg-stone-850 text-white col-span-1"><div class="p-4 scrolling-sidebar"><h1 class="text-2xl font-semibold">Sidebar</h1><ul class="mt-4"><li class="mb-2"><a href="#" class="hover:text-lime-600">Dashboard</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Products</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Customers</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Orders</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Settings22</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Dashboard</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Products</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Customers</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Orders</a></li><li class="mb-2"><a href="#" class="hover:text-lime-600">Settings22</a></li></ul></div></div><main class="col-span-3 p-6 rounded shadow"><div class="list"><div class="row_class"><div class="name">foo1</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;1&quot;,&quot;dream.csrf&quot;:&quot;ADWnGwb3lRsn0_jqFbxk_k88vE2RTovl9Q4AZKR29UfN-H45TsRgLfaRGS6maS16aktp9txD8Srk_Un_1ZYAWcy4lIvpbaSClOGo571HpiVO&quot;}">Zapytania HTTP mogą być generowane z dowolnych elementów (nie tylko z &lt;a&gt; lub &lt;form&gt;)</div></div><div class="row_class"><div class="name">foo2</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;2&quot;,&quot;dream.csrf&quot;:&quot;AG-limB7nv-J4mFC5PqqKY4zj3jZIa8gJJBeVc4ecjtXjq73bw1vImD8JLeKapV7Po-Eh5HBhZAZpaB9frR628Jj-9vtlHqdV-PoCdCMVnas&quot;}">Zapytania HTTP mogą być genrewane przez dowolne zdarzenia (nie tylko przez &quot;click&quot; i &quot;submit&quot;)</div></div><div class="row_class"><div class="name">foo4</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;4&quot;,&quot;dream.csrf&quot;:&quot;ANThgIAIBdGxw0TlGes8pMzaHeQtOMRoKVp6wy3HxWGMOMtkAk_IPfjgSl0wjzViO-wPhTRRDxv7w4EHjV1Y2bzNts54xmvXsIYw093ngyz0&quot;}">Zastępowana może być dowolna część dokumentu HTML (nie cały dokument)</div></div><div class="row_class"><div class="name">foo5</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;5&quot;,&quot;dream.csrf&quot;:&quot;AKTD3YnxAfokc2fFa3be-QoHJfcNIAiOK506Brx99xCEmL6rDi0pxR4Q6gUaU4I9RorQpZbBsNgzCCrMWXv4CztZSJPZuZRDgCdFIGZ8hWQ6&quot;}">Strony mogą być przeładowywane bez ponownego wczytywania nagłówków (a więc css'ów, fontów itp).</div></div><div class="row_class"><div class="name">foo6</div><div hx-post="/edit" hx-swap="outerHTML" hx-trigger="click[ctrlKey]" hx-vals="{&quot;row_id&quot;:&quot;6&quot;,&quot;dream.csrf&quot;:&quot;AD7JVtNspWcfTkr6b-BGwX-chgGf33HbHUw13x0ue1tY1NEqxXbZdM35D7WfTGb6FqR-eEQHnY_kvFcPL1MVKHW-Y8JJggEp8DYXUNG5KYxg&quot;}">&lt;p&gt;Ogólnie &lt;b&gt;idea&lt;/b&gt; jest taka, żeby &lt;i&gt;odświeżać&lt;/i&gt; tylko elementy strony które wymagają odświeżenia&lt;/p&gt;</div></div></div></main></div></body>
  
  |} *)
@@ -261,15 +264,19 @@ let html_string =
 <span style="color: #ede0ce;"> </span><span style="color: #487d76;">int</span><span style="color: #ede0ce;"> </span>
 <span style="color: #92b55f;">*</span><span style="color: #ede0ce;"> </span><span style="color: #487d76;">int</span>
   </div>
+<a title="ocaml-postgrest" href="https://github.com/carlosdagos/ocaml-postgrest"><span>⏩</span><em>ocaml-postgrest</em></a>
 </div>
-<p><em>⏩ <a title="ocaml-postgrest" href="https://github.com/carlosdagos/ocaml-postgrest">ocaml-postgrest</a></em></p>
+Ala
 <br/>
+Ma
 <br/>
+Kota
 <p class="flex justify-center">
 <iframe width="1854" height="756" src="https://www.youtube.com/embed/YMuBBEMV-7M?list=RDYMuBBEMV-7M" title="Lady, Lady, Lady - Joe Esposito (Ana de Armas)" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="" >
 </iframe>
 </p>
 </blockquote>
+
 |} 
 (* {|<div style="color: #ede0ce;background-color: #1a1b1d;font-family: 'JetBrainsMono Nerd Font Mono', 'Droid Sans Mono', 'monospace', monospace;font-weight: normal;font-size: 20px;line-height: 30px; white-space: pre;">
 <div>
@@ -475,164 +482,3 @@ let () =
     ]
 ;;
 
-(*
-open Tyxml.Xml
-open Tyxml_html
-open Xml
-  
-let parse_html_string (html_string: string)  =
-    let parser = new XmlParser () in
-    let document = parser#parse_string html_string in
-    let root_element = document#root in
-    cast_element root_element
-*)
-(* hx-trigger="document.querySelector('#my-button').textContent === 'Click me'*)
-
-(*<button hx-trigger="click, keyup[altKey&&shiftKey&&key=='D'] from:body"
-        hx-post="/doit">Do It! (alt-shift-D)</button>*)
-
-(*
-let response2 _ =
-  let open Tyxml.Html in
-  let ocaml = a ~a:[a_href "ocaml.org"] [txt "OCaml!"] in
-  Dream.html @@ elt_to_string ocaml
-;;
-*)
-
-
-
-(*let display_id request row = 
-  let open Tyxml.Html in 
-  let json_id = "{\"id\": " ^ Int.to_string row.id ^ "}" in
-    div ~a:[
-      Unsafe.string_attrib "hx-post" "/count"; 
-      Unsafe.string_attrib "hx-swap" "outerHTML";
-      Unsafe.string_attrib "hx-vals" json_id;
-      a_class["count"]] 
-    [ Tyxml.Html.Unsafe.data (Dream.csrf_tag request);
-      input ~a:[ a_hidden(); a_name "id"; a_value (Int.to_string row.id)] ();
-      txt (Int.to_string row.count)]
-*)  
-
-
-
-(*
-
-type todo = {
-  id: int;
-  title: string;
-  mutable completed: bool;
-}
-
-
-let global_todos = ref []
-
-
-
-let render_todo todo =
-  let open Tyxml.Html in 
-  let id = Int.to_string todo.id in 
-  div
-    [ div ~a:[ a_id id; a_class [ "todo"]] [ txt todo.title]
-    ; div
-        ~a:[Unsafe.string_attrib "hx-target" "foo"; a_class [ "completed"]]
-      [txt @@ Bool.to_string todo.completed]
-    ]
-;;
-
-
-
-let get_todos () =
-
-  let open Tyxml.Html in 
-  let todos =
-    List.map render_todo !global_todos |> List.map(fun x -> li [ x ]) |> ul
-  in 
-  Dream.html @@ elt_to_string todos
-
-
-let create_todo title = 
-  let todo = { title; completed = false; id = List.length !global_todos } in 
-  global_todos := 
-        todo :: !global_todos;
-  todo
-;;
-
-
-let complete_todo id = 
-  let open Base in 
-  match List.find !global_todos ~f:(fun x -> x.id = id) with
-  | Some todo ->
-      todo.completed <- true;
-      Some todo
-  | None -> None
-;;
-
-
-let handle_complete_todo id =
-  let todo = complete_todo id in 
-  match todo with
-  | Some todo -> Dream.html @@ elt_to_string @@ render_todo todo
-  | None -> Dream.empty `Not_Found
-;;
-
-
-let delete_todo id =
-  let open Base in 
-  match List.find !global_todos ~f:(fun x -> x.id = id) with
-  | Some _ ->
-      global_todos := List.filter !global_todos ~f:(fun x -> x.id <> id);
-      true
-  | None -> false
-;;
-
-
-
-let handle_delete_todo id =
-  let todo = delete_todo id in
-  match todo with
-  | true -> Dream.empty `OK
-  | false -> Dream.empty `Not_Found
-;;
-
-*)
-
-(*
-let response request =
-  let open Lwt.Syntax in
-  let* body = Dream.body request in
-  Dream.respond ~headers:["Content-Type", "application/octet-stream"] body
-*)
-
-
-(*
-     Dream.get "/" (fun _ -> get_todos())
-    (*[ Dream.get "/" (fun _ -> html @@ elt_to_string @@ get_todos())*)
-
-    ; Dream.post "/todo" (fun request ->
-        let open Lwt.Syntax in
-        let* form = Dream.form ~csrf:false request in
-        match form with
-          | `Ok [ ("title", title)] ->
-            let id = create_todo title in
-            Dream.html @@ elt_to_string @@ render_todo id
-          | _ -> Dream.empty `Bad_Request)
-
-    ; Dream.put "/todo" (fun request ->
-        let open Lwt.Syntax in
-        let* form = Dream.form ~csrf:false request in
-        match form with
-        | `Ok [ ("id", id) ] ->
-            let id = int_of_string_opt id in
-            (match id with
-            | Some id -> handle_complete_todo id
-            | _ -> Dream.empty `Bad_Request)
-        | _ -> Dream.empty `Bad_Request)
-
-    ; Dream.delete "/todo/:id" (fun request -> 
-        let id = Dream.param request "id" in
-        let id = int_of_string_opt id in
-        (match id with
-          | Some id -> handle_delete_todo id
-          | _ -> Dream.empty `Bad_Request))
-*)
