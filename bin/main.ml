@@ -275,9 +275,7 @@ Kota
 <iframe width="1854" height="756" src="https://www.youtube.com/embed/YMuBBEMV-7M?list=RDYMuBBEMV-7M" title="Lady, Lady, Lady - Joe Esposito (Ana de Armas)" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="" >
 </iframe>
 </p>
-</blockquote>
-
-|} 
+</blockquote>|} 
 (* {|<div style="color: #ede0ce;background-color: #1a1b1d;font-family: 'JetBrainsMono Nerd Font Mono', 'Droid Sans Mono', 'monospace', monospace;font-weight: normal;font-size: 20px;line-height: 30px; white-space: pre;">
 <div>
   <span style="color: #7a7267;">(* Copyright by Dariusz Mikołajczyk 2024 *)</span>
@@ -306,7 +304,7 @@ let display_row request row =
 let tokens : Lexer.token list = Lexer.tokenize html_string
 in
 
-  (* Dream.log "%s" (Lexer.tokensl2str tokens); *)
+  Dream.log "%s" (Lexer.tokensl2str tokens);
   let _ = match (Array.of_list tokens |> ref) |> Parser.parser_run Parser.tag_element_p with
     | Ok el  ->
       Dream.log "\n\n------------------------------\n%s\n------------------------------\n" (Parser.pp el "  " "  ")
