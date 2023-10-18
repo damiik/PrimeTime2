@@ -24,17 +24,17 @@ let tokenize s =
       (* Printf.printf "tokenize div\n"; *)
       Tok_Slash(ln, col)::(f (pos + 1) ln (col + 1))
     end 
-    else if (Str.string_match (Str.regexp "[\\x10]+") s pos) then begin
+    else if (Str.string_match (Str.regexp "\n+") s pos) then begin
       let token_l = Str.matched_string s |> String.length in
       Dream.log "********** tokenize newl:%s*********\n" (Str.matched_string s);
       (f (pos + token_l) (ln + token_l) token_l)
     end 
-    else if (Str.string_match (Str.regexp "[\\x09\\x20 ]+") s pos) then begin (* whitespaces *)
+    else if (Str.string_match (Str.regexp "[\x09\x20 ]+") s pos) then begin (* whitespaces *)
       let token_l = Str.matched_string s |> String.length in
       Dream.log "********** tokenize white:%s********\n" (Str.matched_string  s);
       (f (pos + token_l) ln (col + token_l))
     end
-    else if (Str.string_match (Str.regexp {|>\([^<\\n]+\)[<\\n]+|}) s pos) then begin (*  >...<  *)
+    else if (Str.string_match (Str.regexp ">\\([^<\n]+\\)[<\n]+") s pos) then begin (*  >...<  *)
       let token = Str.matched_group 1 s in
       (* let token_l = String.to_seq token |> Seq.filter (fun a -> a != '\n' && a != '\t' && != ' ') in *)
       let new_lines = String.to_seq token |> Seq.filter(fun a -> a == '\n') |> Seq.length in
