@@ -66,7 +66,7 @@ let tokenize s =
       (* Printf.printf "tokenize word: %s\n" token; *)
       (Tok_Word (token, ln, col))::(f (pos + String.length token) ln (col + String.length token))
     end
-    else if (Str.string_match (Str.regexp {|[\x09 ]+|}) s pos) then begin (* whitespaces *)
+    else if (Str.string_match (Str.regexp "[\x09 ]+") s pos) then begin (* whitespaces *)
       let token_l = Str.matched_string s |> String.length in
       (* Printf.printf "tokenize white: %s\n" token; *)
       (f (pos + token_l) ln (col + token_l))
