@@ -221,6 +221,27 @@ let from_amp s =
   in
   (string_to_char_list s) |> reduce_from_amp |> char_list_to_string
 
+let remove_white s =
+
+    (* let rec f sq = 
+      match sq with 
+      | ' '::rest_of_string -> f rest_of_string
+      | '\t'::rest_of_string -> f rest_of_string
+      | '\n'::rest_of_string -> f rest_of_string
+      | [] -> []
+      | a -> f a
+    in *)
+      
+  (* if Str.string_match (Str.regexp "[\n\t ]+\(.*\)") s 0 then
+  Str.matched_group 1 s *)
+  if Str.string_match (Str.regexp "[\n\t ]*\\([^\n]*\\)[\n\t ]*$") s 0 then
+  Str.matched_group 1 s
+  else s 
+  (* Printf.printf "tokenize string: %s\n" token; *)
+
+    (* Printf.printf "tokenize string: %s\n" token; *)
+
+  
 (* string is everything between "" brackets *)
 let string_p: string parser = {
   run = fun state -> 
@@ -235,7 +256,6 @@ let string_p: string parser = {
 }
 
 
-
 (* text is everyting between '>' and '<' characters *)
 let text_p: xml_object parser = {
   run = fun state -> 
@@ -244,10 +264,11 @@ let text_p: xml_object parser = {
     match curr_token with (* określić aktualną pozycję jako pole w state lub obliczać później *)
     | Tok_Text (l_str, _, _) ->
           (* let pos = Str.search_forward (Str.regexp {|&\([^;]*\);|}) l_str 1 in  *)
-         {state with token_ix = (state.token_ix + 1); }, Ok (Text_El (from_amp l_str))
+         {state with token_ix = (state.token_ix + 1); }, Ok (Text_El (l_str |> from_amp))
     | token -> 
       state, Error ( sprintf ": Text data (Tok_Text) element expected but got: >%s< at: (line:%d, col:%d) " (token2str token) line column)
 }
+
 
 let attribute_p: (string * string) parser = 
   (name_p <* (is_a (Tok_Equ(0,0)))) <*> string_p >>= 
@@ -273,7 +294,7 @@ let br_element_p : xml_object parser =
     (* recursive parser must have this form *)
 let rec tag_element_p : xml_object parser = 
   { run = fun state -> state |> (
-  element_init_p <*> (((zeroOrMore text_p) *> (oneOrMore xml_object_p)) <|> (oneOrMore text_p)) <*> element_end_p <* zeroOrMore text_p >>= 
+  element_init_p <*> oneOrMore xml_object_p <*> element_end_p >>= 
     fun ((e, ch), end_tag) ->
       match (e, ch) with 
       | (Tag_El e1, ch) ->     
@@ -301,7 +322,7 @@ and xml_object_p : xml_object parser = {
 *)
 and xml_object_p : xml_object parser = { run = fun state ->
   
-  (br_element_p <|> autoclose_element_p <|> tag_element_p  (* <|> fail "<nieznany xml_obiekt>" *) ).run state }
+  (br_element_p <|> autoclose_element_p <|> tag_element_p <|> text_p (* <|> fail "<nieznany xml_obiekt>" *) ).run state }
 
 
 let parser_run (p: 'a parser) (t: token array ref): ('a, error) result =

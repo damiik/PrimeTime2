@@ -207,7 +207,8 @@ and xml_to_elt xml =
       )) (* xml_to_elt must be added also here *)
       | _ -> None
     )
-  | Text_El t -> Some (div [txt (String.concat "-" [t ;"??div"])])
+  (* | Text_El t -> Some (div [txt (String.concat "-" [t ;"??div"])]) *)
+  | Text_El t -> Some (txt t)
   in 
   l2
 
@@ -255,21 +256,21 @@ and get_flow_ch ch0 =
 </div>
 |}  *){|<blockquote class="bg-[#232123] shadow-2xl shadow-2xl p-3 rounded-md">
 <div style="color: #ede0ce;font-family: 'JetBrainsMono Nerd Font Mono', 'Droid Sans Mono', 'monospace', monospace;font-weight: normal;font-size: 20px;line-height: 30px; white-space: pre;">
-  <div><span style="color: #7a7267;">(* Copyright by Dariusz Mikołajczyk 2024 *)</span></div>
-  <div><span style="color: #92b55f;">type</span><span style="color: #ede0ce;"> </span>
+<div><span style="color: #7a7267;">(* Copyright by Dariusz Mikołajczyk 2024 *)</span></div>
+<div><span style="color: #92b55f;">type</span><span style="color: #ede0ce;"> </span>
 <span style="color: #e8da5e;">token</span><span style="color: #ede0ce;"> </span>
 <span style="color: #92b55f;">=</span><span style="color: #ede0ce;"> </span></div>
-  <div><span style="color: #ede0ce;"> </span><span style="color: #a0988e;">|</span><span style="color: #ede0ce;">
-    </span><span style="color: #487d76;">Tok_Less</span><span style="color: #ede0ce;"> </span><span  style="color: #a0988e;">of</span>
+<div><span style="color: #ede0ce;"> </span><span style="color: #a0988e;">|</span><span style="color: #ede0ce;">
+  </span><span style="color: #487d76;">Tok_Less</span><span style="color: #ede0ce;"> </span><span  style="color: #a0988e;">of</span>
 <span style="color: #ede0ce;"> </span><span style="color: #487d76;">int</span><span style="color: #ede0ce;"> </span>
 <span style="color: #92b55f;">*</span><span style="color: #ede0ce;"> </span><span style="color: #487d76;">int</span>
-  </div>
+</div>
 <a title="ocaml-postgrest" href="https://github.com/carlosdagos/ocaml-postgrest"><span>⏩</span><em>ocaml-postgrest</em></a>
 </div>
 Ala
-<br/>
+<span style="color:red;">*</span>
 Ma
-<br/>
+<span style="color:red;">*</span>
 Kota
 <p class="flex justify-center">
 <iframe width="1854" height="756" src="https://www.youtube.com/embed/YMuBBEMV-7M?list=RDYMuBBEMV-7M" title="Lady, Lady, Lady - Joe Esposito (Ana de Armas)" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="" >
