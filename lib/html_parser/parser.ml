@@ -202,9 +202,11 @@ let keyword_p s: string parser = {
       state, Error ( sprintf ": Keyword >%s< expected but got token: >%s< at: (line:%d, col:%d)" s (token2str token) line column)
 }
 
+
 let string_to_char_list s =
   s |> String.to_seq |> List.of_seq
-  
+
+
 let char_list_to_string (l:char list)  =
     List.fold_left (fun acc e ->
       if acc = "" then Printf.sprintf "%c" e else Printf.sprintf "%s%c" acc e) "" l
@@ -215,12 +217,35 @@ let from_amp s =
     match sq with 
     | '&'::'l'::'t'::';'::rest_of_string -> '<'::(reduce_from_amp rest_of_string)
     | '&'::'g'::'t'::';'::rest_of_string -> '>'::(reduce_from_amp rest_of_string)
+    | '&'::'n'::'b'::'s'::'p'::';'::rest_of_string -> ' '::(reduce_from_amp rest_of_string)
+    | '&'::'q'::'u'::'o'::'t'::';'::rest_of_string -> '"'::(reduce_from_amp rest_of_string)
     | '&'::'a'::'m'::'p'::';'::rest_of_string -> '&'::(reduce_from_amp rest_of_string)
     | z :: rest_of_string -> z::(reduce_from_amp rest_of_string)
     | [] -> []
   in
   (string_to_char_list s) |> reduce_from_amp |> char_list_to_string
 
+let remove_white s =
+
+    (* let rec f sq = 
+      match sq with 
+      | ' '::rest_of_string -> f rest_of_string
+      | '\t'::rest_of_string -> f rest_of_string
+      | '\n'::rest_of_string -> f rest_of_string
+      | [] -> []
+      | a -> f a
+    in *)
+      
+  (* if Str.string_match (Str.regexp "[\n\t ]+\(.*\)") s 0 then
+  Str.matched_group 1 s *)
+  if Str.string_match (Str.regexp "[\n\t ]*\\([^\n]*\\)[\n\t ]*$") s 0 then
+  Str.matched_group 1 s
+  else s 
+  (* Printf.printf "tokenize string: %s\n" token; *)
+
+    (* Printf.printf "tokenize string: %s\n" token; *)
+
+  
 (* string is everything between "" brackets *)
 let string_p: string parser = {
   run = fun state -> 
@@ -235,7 +260,6 @@ let string_p: string parser = {
 }
 
 
-
 (* text is everyting between '>' and '<' characters *)
 let text_p: xml_object parser = {
   run = fun state -> 
@@ -244,36 +268,44 @@ let text_p: xml_object parser = {
     match curr_token with (* określić aktualną pozycję jako pole w state lub obliczać później *)
     | Tok_Text (l_str, _, _) ->
           (* let pos = Str.search_forward (Str.regexp {|&\([^;]*\);|}) l_str 1 in  *)
-         {state with token_ix = (state.token_ix + 1); }, Ok (Text_El (from_amp l_str))
+         {state with token_ix = (state.token_ix + 1); }, Ok (Text_El (l_str |> from_amp))
     | token -> 
       state, Error ( sprintf ": Text data (Tok_Text) element expected but got: >%s< at: (line:%d, col:%d) " (token2str token) line column)
 }
 
+
 let attribute_p: (string * string) parser = 
-  (name_p <* (is_a (Tok_Equ(0,0)))) <*> string_p >>= 
-          fun (n, s) -> return (n,s)
+  (name_p <* (is_a (Tok_Equ(0,0)))) <*> string_p >>= fun (n, s) -> return (n,s)
+
 
 let element_init_p : xml_object parser = 
   
   ((is_a (Tok_Less(0,0))) *> (name_p <*> zeroOrMore attribute_p) <* (is_a (Tok_More(0,0))) >>= 
     fun (n, l) -> return (Tag_El {name = n; childs = []; attributes = l})) 
 
+
 let element_end_p : string parser = 
   (is_a (Tok_Less(0,0))) *> (is_a (Tok_Slash(0,0))) *> name_p <* (is_a (Tok_More(0,0))) >>= 
     fun (name) -> return name
 
+
 let autoclose_element_p : xml_object parser =  
-      ((is_a (Tok_Less(0,0))) *> (name_p <*> zeroOrMore attribute_p) <* (is_a (Tok_Slash(0,0))) <* (is_a (Tok_More(0,0))) <* zeroOrMore text_p >>= 
-        fun (n, l) -> return (Tag_El {name = n; childs = []; attributes = l}))
+  ((is_a (Tok_Less(0,0))) *> (name_p <*> zeroOrMore attribute_p) <* (is_a (Tok_Slash(0,0))) <* (is_a (Tok_More(0,0))) <* zeroOrMore text_p >>= 
+    fun (n, l) -> return (Tag_El {name = n; childs = []; attributes = l}))
+
 
 let br_element_p : xml_object parser =  
   ((is_a (Tok_Less(0,0))) *> (keyword_p "br") <* (is_a (Tok_More(0,0))) <* zeroOrMore text_p >>= 
     fun _ -> return (Tag_El {name = "br"; childs = []; attributes = []}))
 
-    (* recursive parser must have this form *)
+let img_element_p : xml_object parser =  
+  ((is_a (Tok_Less(0,0))) *> ((keyword_p "img") <*> zeroOrMore attribute_p) <* (is_a (Tok_More(0,0))) <* zeroOrMore text_p >>= 
+    fun (_, l) -> return (Tag_El {name = "img"; childs = []; attributes = l}))
+
+(* recursive parser must have this form *)
 let rec tag_element_p : xml_object parser = 
   { run = fun state -> state |> (
-  element_init_p <*> (((zeroOrMore text_p) *> (oneOrMore xml_object_p)) <|> (oneOrMore text_p)) <*> element_end_p <* zeroOrMore text_p >>= 
+  element_init_p <*> oneOrMore xml_object_p <*> element_end_p >>= 
     fun ((e, ch), end_tag) ->
       match (e, ch) with 
       | (Tag_El e1, ch) ->     
@@ -300,15 +332,15 @@ and xml_object_p : xml_object parser = {
 }
 *)
 and xml_object_p : xml_object parser = { run = fun state ->
-  
-  (br_element_p <|> autoclose_element_p <|> tag_element_p  (* <|> fail "<nieznany xml_obiekt>" *) ).run state }
+  (br_element_p <|> img_element_p <|> autoclose_element_p <|> tag_element_p <|> text_p (* <|> fail "<nieznany xml_obiekt>" *) ).run state 
+}
 
 
 let parser_run (p: 'a parser) (t: token array ref): ('a, error) result =
-
   match (t, 0, 0) |> set_state |> p.run with
   | _     , Ok x    -> Ok x
   | state', Error desc -> Error {token_ix = state'.token_ix; desc = desc; }
+
 
 let rec pp (el : xml_object) (prefix : string) (curr_prefix : string) = 
   let prefix2 = sprintf "%s%s" prefix curr_prefix in
@@ -324,5 +356,6 @@ let rec pp (el : xml_object) (prefix : string) (curr_prefix : string) =
       sprintf "%s%s\n%s%s%s%s" curr_prefix el0.name prefix3 attributes_pp prefix2 childs_pp 
 
     | Text_El s -> sprintf "%stext:\"%s\"" curr_prefix s
+
 
 let () = printf "\n****************************************************\nHello World\n"
