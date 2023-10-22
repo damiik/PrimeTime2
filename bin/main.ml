@@ -183,17 +183,6 @@ let rec xml_to_phrasing_nointer xml =
   Img
   Picture *)
 
-and xml_to_elt_li xml =   
-    let open Tyxml.Html in
-    match xml with 
-    | Parser.Tag_El el -> (
-      match el.name with
-      | "li" -> (li ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> match (xml_to_phrasing_nointer  ch) with |Some e -> e::l| None -> l) [] el.childs))
-      | n -> li [txt n]
-    )
-    | Text_El t -> li [txt (String.concat "-" [t ;"??li"])] 
-
-
 and xml_to_flow5 xml =
   let open Tyxml.Html in
   match xml with 
@@ -208,8 +197,8 @@ and xml_to_flow5 xml =
     | "h6" -> Some (h6 ~a:(get_a_attrib el.attributes) (get_phrasing_ch el.childs))  
     | "p" -> Some (p ~a:(get_a_attrib el.attributes) (get_phrasing_ch el.childs))
     | "pre" -> Some (pre ~a:(get_a_attrib el.attributes) (get_phrasing_ch el.childs))
-    | "ul" -> Some (ul ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt_li ch)::l) [] el.childs))
-    | "ol" -> Some (ol ~a:(get_a_attrib el.attributes) (List.fold_left (fun l ch -> (xml_to_elt_li ch)::l) [] el.childs))
+    | "ul" -> Some (ul ~a:(get_a_attrib el.attributes) (el.childs |> get_li_ch))
+    | "ol" -> Some (ol ~a:(get_a_attrib el.attributes) (el.childs |> get_li_ch))
     | "a" -> Some (a ~a:(get_href_attrib el.attributes) (get_phrasing_nointer_ch @@ el.childs :> Html_types.flow5_without_interactive elt list_wrap))
     | "div" -> Some (div ~a:(get_a_attrib el.attributes) (get_flow_ch el.childs)) (* xml_to_elt must be added also here *)    
     | "blockquote" -> Some (blockquote ~a:(get_a_attrib el.attributes) (get_flow_ch el.childs)) (* xml_to_elt must be added also here *)
@@ -248,6 +237,19 @@ and get_flow_ch ch0 =
             )
         )
   ) [] ch0
+
+
+and get_li_ch ch0 =
+  List.fold_left (fun l ch -> (
+    let open Tyxml.Html in
+    match ch with 
+    | Parser.Tag_El el -> (
+      match el.name with
+      | "li" -> (li ~a:(el.attributes |> get_a_attrib) (el.childs |> get_flow_ch))::l
+      | n -> li [txt n]::l
+    )
+    | _ -> l  
+  )) [] ch0
 
 
   let html_string = 
@@ -295,9 +297,6 @@ Kota
 let display_row request row =
   let vals = Printf.sprintf "{\"row_id\":\"%d\",\"dream.csrf\":\"%s\"}" row.id (Dream.csrf_token request) in
  
-(*  let tokens : Lexer.token list = Lexer.tokenize {|<h1 style="text-align: center;" name="dupa"><a>abc</a></h1>|} *)
-(*  let tokens : Lexer.token list = Lexer.tokenize {|<h5 style="text-align: left;"><em>👉 </em><span style="color: #236fa1;"><em><a style="color: #236fa1;" title="Obliczenia strat dynamicznych dla mosfet " href="https://www.elektroda.pl/rtvforum/topic3474295.html">Obliczenia strat dynamicznych dla mosfet</a></em></span></h5>|}*)
-
 let tokens : Lexer.token list = Lexer.tokenize html_string
 in
 

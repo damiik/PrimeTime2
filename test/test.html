@@ -1,25 +1,89 @@
-<blockquote class="bg-[#232123] shadow-2xl shadow-2xl p-3 rounded-md">
-  <div style="color: #ede0ce;font-family: 'JetBrainsMono Nerd Font Mono', 'Droid Sans Mono', 'monospace', monospace;font-weight: normal;font-size: 20px;line-height: 30px; white-space: pre;">
-    <div><span style="color: #7a7267;">(* Copyright by Dariusz Mikołajczyk 2024 *)</span></div>
-    <div><span style="color: #92b55f;">type</span><span style="color: #ede0ce;"> </span>
-  <span style="color: #e8da5e;">token</span><span style="color: #ede0ce;"> </span>
-  <span style="color: #92b55f;">=</span><span style="color: #ede0ce;"> </span></div>
-    <div><span style="color: #ede0ce;"> </span><span style="color: #a0988e;">|</span><span style="color: #ede0ce;">
-      </span><span style="color: #487d76;">Tok_Less</span><span style="color: #ede0ce;"> </span><span  style="color: #a0988e;">of</span>
-  <span style="color: #ede0ce;"> </span><span style="color: #487d76;">int</span><span style="color: #ede0ce;"> </span>
-  <span style="color: #92b55f;">*</span><span style="color: #ede0ce;"> </span><span style="color: #487d76;">int</span>
-    </div>
-  <a title="ocaml-postgrest" href="https://github.com/carlosdagos/ocaml-postgrest"><span>⏩</span><em>ocaml-postgrest</em></a>
+<div>
+  <p> </p>
+  <h2 style="text-align: center; color:#cb993b; background-color:#232123">Typy - Polymorphic Variant</h2>
+  <p> </p>
+  <p> </p>
+  <p style="color:#cb993b; background-color:#232123">W czasie tworzenia aplikacji w Ocaml (serwera http) do generowania obiektów html wykorzystałem bibliotekę Tyxml. Wszystko szło gładko, ale ponieważ chciałem aby poszczególne artykuły (strony) były przechowywane w bazie danych jako zwykły tekst html który można edytować w samej aplikacji, to musiałem również stworzyć parser, który ten tekst konwertuje na drzewo obiektów html a następnie zawartość została by dołączona do pozostałej części aplikacji (za pomocą biblioteki Tyxml). Tutaj jednak natknąłem się na problem z niezgodnością typów. Rozwiązanie tego problemu zajęło mi kilka dni, ponieważ musiałem poznać nową klasę typów w języku Ocaml, która jest wykorzystywana w bibliotece Tyxml - polimorficzne warianty.</p>
+  <p>W kodzie poniżej typ zmiennej "e" jest promowany za pomocą operatora :&gt; z typu "<code>phrasing elt</code>" do typu "<code>body_content elt</code>". Wiele dni nie wiedziałem jak to zrobić. Czułem że brakuje mi w tym miejscu wiedzy. Problem polegał na tym że nie do końca wiedziałem, z jakiej dziedziny miała by to być wiedza. Po jakimś czasie okazało się że tych dziedzin jest dokładnie dwie. Pierwsza to to, co dokładnie znaczy w html'u określenie "body content" czy "phrasing content", czyli które elementy mogą być "rodzicami" których elementów. Drugie zagadnienie to typy polimorficzne Ocamla, i tutaj należało poznać nową składnię z nawiasami kwadratowymi [&gt; ....] oraz [&lt; ....] gdzie wielokropki oznaczają listę typów zaczynających się od apostrofu i od wielkiej litery i oddzielonych od siebie znakiem |. </p>
+  <p>Problem polegał na tym, że nie wiedziałem jak "awansować" jeden typ do drugiego, bardziej ogólnego, zawiera wszystkie elementy tego pierwszego. Na początku nawet nie wiedziałem że będę musiał to zrobić.</p>
+  <p> </p>
+  <blockquote style="color: #cb993b; background-color: #232123; padding: 1rem; line-height: 1rem;">
+  <div style="color: #ede0ce; background-color: #1a1b1d; font-family: 'JetBrainsMono Nerd Font Mono', 'Droid Sans Mono', 'monospace', monospace; font-weight: normal; font-size: 16px; white-space: pre;"><br />
+  <div><span style="color: #92b55f;">and</span><span style="color: #ede0ce;"> </span><span style="color: #e8da5e;">get_childs2</span><span style="color: #ede0ce;"> (l </span><span style="color: #7a7267;">(*:[&lt; Html_types.phrasing &gt; `B `Br `I `PCDATA `Span `U ] Tyxml_html.elt Tyxml_html.list_wrap*)</span><span style="color: #ede0ce;"> ) ch </span><span style="color: #92b55f;">=</span><span style="color: #ede0ce;"> </span></div>
+  <div><span style="color: #ede0ce;"> </span><span style="color: #a0988e;">match</span><span style="color: #ede0ce;"> (xml_to_elt2 ch) </span><span style="color: #a0988e;">with</span><span style="color: #ede0ce;"> </span></div>
+  <div><span style="color: #ede0ce;"> </span><span style="color: #a0988e;">|</span><span style="color: #ede0ce;"> </span><span style="color: #487d76;">Some</span><span style="color: #ede0ce;"> e </span><span style="color: #92b55f;">-&gt;</span><span style="color: #ede0ce;"> (e </span><span style="color: #a0988e;">:</span><span style="color: #92b55f;">&gt;</span><span style="color: #ede0ce;"> </span><span style="color: #487d76;">Html_types</span><span style="color: #a0988e;">.</span><span style="color: #ede0ce;">body_content_fun </span><span style="color: #487d76;">Tyxml_html</span><span style="color: #a0988e;">.</span><span style="color: #ede0ce;">elt) </span><span style="color: #a0988e;">::</span><span style="color: #ede0ce;"> l </span><span style="color: #7a7267;">(*promote this type to body_content*)</span></div>
+  <div><span style="color: #ede0ce;"> </span><span style="color: #a0988e;">|</span><span style="color: #ede0ce;"> </span><span style="color: #487d76;">None</span><span style="color: #ede0ce;"> </span><span style="color: #92b55f;">-&gt;</span><span style="color: #ede0ce;"> l</span></div>
   </div>
-  Ala    1       2       3       
-  <br/>
-  Ma
-  <br/>
-  Kota
-  <p class="flex justify-center">
-  <iframe width="1854" height="756" src="https://www.youtube.com/embed/YMuBBEMV-7M?list=RDYMuBBEMV-7M" title="Lady, Lady, Lady - Joe Esposito (Ana de Armas)" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="" >
+  </blockquote>
+  <p> </p>
+  <p>Powyższy kod awansuje wartość e na typ <code>body_content elt</code>, a następnie wartość ta jest dołączana do listy. Lista elementów typu "body_content elt" jest zwracana i następnie wykorzystana do doklejenia do innych zwróconych list, tak aby w wyniku stworzyć listę podelementów  dla elementu "div".</p>
+  <p> </p>
+  <p> </p>
+  <h5 style="text-align: center;">Polymorphic Variants - Carlos D'Agostino</h5>
+  <img style="text-align:center; transform: rotate(-8deg); border-style: hidden; float: left;" src="https://ocaml.org/logo-with-name.svg" alt="" width="256" height="70"/>
+  <br>
+  <br>
+  <br>
+  <p style="text-align: center;">
+  <iframe src="https://www.youtube.com/embed/ZK2g8idUgsY" width="800" height="500"  title="Lady, Lady, Lady - Joe Esposito (Ana de Armas)" >
   </iframe>
   </p>
-  </blockquote>
+  
+  <h1>Xah Talk Show 2023-03-29 Glove80 Keyboard, Ocaml vs Haskell, WolframLang, ChatGPT</h1>
   
   
+  <iframe width="640" height="480" src="https://www.youtube.com/embed/clgNJ32EkFM">
+  </iframe>
+  
+  
+  <ul>
+  <li>2:25 glove80 keyboard programability</li>
+  <li>13:14 java programer, job, motivation</li>
+  <li>16:45 emacs as editor</li>
+  <li>18:45 MacBook Air M1 chip</li>
+  <li>19:25 escape key, control key</li>
+  <li>26:46 ball shaver</li>
+  <li>28:05 hyper7 keyboard</li>
+  <li>29:09 haskell vs ocaml</li>
+  <li>31:57 WolframLang, LISP, APL</li>
+  <li>1:01:48 ChatGPT, Will AI Take Over the World</li>
+  </ul>
+  
+  <ul>
+  <li><a href="http://xahlee.info/kbd/glove80_keyboard.html">Glove80 Keyboard</a></li>
+  <li><a href="http://xahlee.info/macs/misc/xah-fly-keys_glove80.html">Xah Fly Keys Layout for Glove80 Keyboard</a></li>
+  </ul>
+  
+  <ul>
+  <li><a href="http://xahlee.info/M/lisp_root_of_wolfram_lang.html">LISP/APL Root in Mathematica / Wolfram Language</a></li>
+  <li><a href="http://xahlee.info/kbd/IBM_2741_printing_terminal.html">IBM 2741 Printing Terminal</a></li>
+  <li><a href="http://xahlee.info/comp/unicode_APL_symbols.html">Unicode: APL Symbols</a></li>
+  <li><a href="http://xahlee.info/comp/APL_symbol_meaning.html">APL Symbols Meaning and Code Example</a></li>
+  </ul>
+  
+  <ul>
+  <li><a href="http://xahlee.info/comp/F_Sharp_OCaml_books_and_people.html">F Sharp, OCaml Books and History of OCaml</a></li>
+  <li><a href="http://xahlee.info/comp/Yaron_Minsky_Janestreet_talk.html">OCaml Use in Industry: Janestreet Talk by Yaron Minsky 📺</a></li>
+  <li><a href="http://xahlee.info/comp/ocaml_bad_tutorial.html">OCAML Official Tutorial Suck</a></li>
+  <li><a href="http://xahlee.info/comp/ocaml_haskell_syntax_history.html">History of OCaml and Haskell Syntax, and The Next 700 Programming Languages</a></li>
+  <li><a href="http://xahlee.info/comp/ocaml_let_syntax.html">OCaml Syntax Sucks</a></li>
+  <li><a href="http://xahlee.info/ocaml/ocaml_list.html">OCaml Tutorial: List, Array, Tuple</a></li>
+  <li><a href="http://xahlee.info/haskell/haskell-logo.html">Haskell Logo</a></li>
+  </ul>
+  
+  <ul>
+  <li><a href="http://xahlee.info/kbd/glove80_keyboard.html">Glove80 Keyboard</a></li>
+  <li><a href="http://xahlee.info/emacs/misc/xah-fly-keys_glove80.html">Xah Fly Keys Layout for Glove80 Keyboard</a></li>
+  </ul>
+  
+  <ul>
+  <li><a href="http://xahlee.info/M/lisp_root_of_wolfram_lang.html">LISP/APL Root in Mathematica / Wolfram Language</a></li>
+  <li><a href="http://xahlee.info/kbd/IBM_2741_printing_terminal.html">IBM 2741 Printing Terminal</a></li>
+  <li><a href="http://xahlee.info/comp/unicode_APL_symbols.html">Unicode: APL Symbols</a></li>
+  <li><a href="http://xahlee.info/comp/APL_symbol_meaning.html">APL Symbols Meaning and Code Example</a></li>
+  </ul>
+  
+  
+  
+  
+  </div>
