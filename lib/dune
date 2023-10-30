@@ -1,6 +1,6 @@
 (library
  (name cool_lib)
- (libraries dream tyxml base str)
- (modules icons styles)
+ (libraries dream tyxml base str mariadb)
+ (modules icons styles db)
  (public_name cool_lib)
 )

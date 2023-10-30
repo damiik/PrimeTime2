@@ -17,6 +17,7 @@ depends: [
   "digestif"
   "dream"
   "tyxml"
+  "mariadb"
   "odoc" {with-doc}
 ]
 build: [

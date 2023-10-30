@@ -19,7 +19,7 @@
  (name PrimeTime2)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml dune base str digestif dream tyxml)
+ (depends ocaml dune base str digestif dream tyxml mariadb)
  (allow_empty) 
  (tags
   (topics "to describe" your project))
