@@ -34,3 +34,12 @@ let edit_text_class = [
   "rounded";
   "shadow-[inset_1px_2px_7px_rgba(0,0,0,0.6)]"
 ]
+
+let grid_cell_lt = [
+
+  "border-b-2"; 
+  "border-dashed";
+  "border-gray-900";
+  "p-[5px]";
+  "bg-[#69540b]"
+]

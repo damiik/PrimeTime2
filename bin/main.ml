@@ -2,6 +2,9 @@ open Cool_lib (* modules: Styles, Icons *)
 open Layouts  (* modules: Sidebard, Head *)
 open Html_parser
 
+module T = Html_tools
+
+(* dune exec PrimeTime2 --watch *)
 
 (*todo*)
 (*
@@ -75,17 +78,21 @@ let search_attr a f (l, r) = (match List.filter (fun (n,_) -> n = a) l with
   | [(_,s)] -> (l, (f s)::r)
   | _ -> (l, r))
 
+let get_classes a = 
+  let classes = String.split_on_char ' ' a in
+  T.expand_classes classes
+
 let get_a_attrib attrib_list =  
   let open Tyxml.Html in 
   let (_, res) = (attrib_list, []) |> 
-  (search_attr "class"  (fun a -> a_class (String.split_on_char ' ' a))) |> (* wrap function to convert argument to list of classes *)
+  (search_attr "class"  (fun a -> a_class (get_classes a))) |> (* wrap function to convert argument to list of classes *)
   (search_attr "style"  a_style) in
   res
 
 let get_href_attrib attrib_list =  
   let open Tyxml.Html in 
   let (_, res) = (attrib_list, []) |> 
-  (search_attr "class"  (fun a -> a_class (String.split_on_char ' ' a))) |> (* wrap function to convert argument to list of classes *)
+  (search_attr "class"  (fun a -> a_class (get_classes a))) |> (* wrap function to convert argument to list of classes *)
   (search_attr "href"   a_href) |>
   (search_attr "title"  a_title) |>
   (search_attr "style"  a_style) in
@@ -96,7 +103,7 @@ let get_iframe_attrib attrib_list =
   let open Tyxml.Html in 
 
   let (_, res) = (attrib_list, []) |> 
-  (search_attr "class"  (fun a -> a_class (String.split_on_char ' ' a))) |> (* wrap function to convert argument to list of classes *)
+  (search_attr "class"  (fun a -> a_class (get_classes a))) |> (* wrap function to convert argument to list of classes *)
   (search_attr "style"  a_style) |>
   (search_attr "title"  a_title) |>
   (search_attr "src"    a_src) |>
@@ -110,7 +117,7 @@ let get_iframe_attrib attrib_list =
 let get_img_attrib attrib_list =  
     let open Tyxml.Html in  
     let (_, res) = (attrib_list, []) |> 
-    (search_attr "class"  (fun a -> a_class (String.split_on_char ' ' a))) |> (* wrap function to convert argument to list of classes *)
+    (search_attr "class"  (fun a -> a_class (get_classes a))) |> (* wrap function to convert argument to list of classes *)
     (search_attr "style"  a_style) |>
     (search_attr "title"  a_title) |>
     (* (search_attr "src"     a_src) |> *)
@@ -343,19 +350,20 @@ let () =
   (* let mariadb = Db.connect in *)
 
   let data : Db.record_t list ref = ref [] in
-    data := {title = "root"; author = "?"; kind_of = Db.Article; childs = [1;2;4;5;6]; data = "This is article about Htmx"; id = 0} :: (!data);
-    data := {title = "root"; author = "?"; kind_of = Db.Paragraph; childs = []; data = "***"; id = 7} :: (!data);
-    data := {title = "foo1"; author = "?"; kind_of = Db.Text; childs = []; data = "Zapytania HTTP mogą być generowane z dowolnych elementów (nie tylko z <a> lub <form>)"; id = 1} :: (!data);
-    data := {title = "foo2"; author = "?"; kind_of = Db.Text; childs = []; data = "Zapytania HTTP mogą być genrewane przez dowolne zdarzenia (nie tylko przez \"click\" i \"submit\")"; id = 2} :: (!data);
-    data := {title = "foo3"; author = "?"; kind_of = Db.Text; childs = []; data = "Dostępne są wszystkie metody AJAX (nie tylko POST i GET ale również PUT, PATCH, DELETE)"; id = 3} :: (!data);
-    data := {title = "foo4"; author = "?"; kind_of = Db.Text; childs = []; data = "Zastępowana może być dowolna część dokumentu HTML (nie cały dokument)"; id = 4} :: (!data);
-    data := {title = "foo5"; author = "?"; kind_of = Db.Text; childs = []; data = "Strony mogą być przeładowywane bez ponownego wczytywania nagłówków (a więc css'ów, fontów itp)."; id = 5} :: (!data);
+  data := {title = "root"; author = "?"; kind_of = Db.Article; childs = [1;2;4;5;6]; data = "This is article about Htmx"; id = 0} :: (!data);
+  data := {title = "root"; author = "?"; kind_of = Db.Paragraph; childs = []; data = "***"; id = 7} :: (!data);
+  data := {title = "foo1"; author = "?"; kind_of = Db.Text; childs = []; data = "Zapytania HTTP mogą być generowane z dowolnych elementów (nie tylko z <a> lub <form>)"; id = 1} :: (!data);
+  data := {title = "foo2"; author = "?"; kind_of = Db.Text; childs = []; data = "Zapytania HTTP mogą być genrewane przez dowolne zdarzenia (nie tylko przez \"click\" i \"submit\")"; id = 2} :: (!data);
+  data := {title = "foo3"; author = "?"; kind_of = Db.Text; childs = []; data = "Dostępne są wszystkie metody AJAX (nie tylko POST i GET ale również PUT, PATCH, DELETE)"; id = 3} :: (!data);
+  data := {title = "foo4"; author = "?"; kind_of = Db.Text; childs = []; data = "Zastępowana może być dowolna część dokumentu HTML (nie cały dokument)"; id = 4} :: (!data);
+  data := {title = "foo5"; author = "?"; kind_of = Db.Text; childs = []; data = "Strony mogą być przeładowywane bez ponownego wczytywania nagłówków (a więc css'ów, fontów itp)."; id = 5} :: (!data);
     (* {name = "foo6"; kind_of = RawHtml; childs = []; data = html_string; 
     id = 6};*)
 
   (* let curr_data_id = ref 6 in
   data :=  {title = ""; author = "?"; kind_of = Db.RawHtml; childs = []; data = "<div>To jest tekst</div>"; id = !curr_data_id} :: (!data);
   curr_data_id := !curr_data_id + 1; *)
+
 
   let get_port () =  
     try int_of_string (Sys.getenv "PORT")
@@ -364,10 +372,14 @@ let () =
   Dream.log "\nReading database..\n";
 
   let mariadb = Db.connect () in
-  Db.get_data mariadb data;
-  Db.close mariadb;
-  Dream.log "Dream run server..\n";
 
+  Db.get_data mariadb data;
+  Db.get_classes_lists mariadb T.classes_lists;
+  
+  Db.close mariadb;
+  
+  
+  Dream.log "Dream run server..\n";
   Dream.run ~interface:"0.0.0.0" ~port:( get_port() )
   (*Dream.run ~port:42069*)
   @@ Dream.logger

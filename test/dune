@@ -1,2 +1,4 @@
 (test
- (name PrimeTime2))
+ (name PrimeTime2)
+ (libraries cool_lib layouts html_parser dream tyxml base str)
+)

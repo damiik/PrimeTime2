@@ -1,4 +1,5 @@
 module M = Mariadb.Blocking
+module T = Html_tools
 
 exception DBError of M.error
 
@@ -37,7 +38,7 @@ let or_die = function
 
 
 let print_row row =
-  Printf.printf "---\n%!";
+  (* Printf.printf "---\n%!"; *)
   (M.Row.StringMap.iter
     (fun name field ->
       Printf.printf "%20s " name;
@@ -56,7 +57,6 @@ let print_row row =
             (M.Time.second t)
       | `Null -> Printf.printf "NULL\n%!")
     row);
-  Printf.printf "<<<<<<<<<<< end of record <<<<<<<<<<\n"; 
   ()
 
 let get_dbhost () =  
@@ -143,10 +143,34 @@ let get_data db (data : record_t list ref) =
   in
   next ();
   (* Printf.printf "Close query..\n"; *)
+  M.Stmt.close stmt |> or_die
+ 
+let get_classes_lists db (classes_lists : T.classes_list_t list ref) =
+
+  let stmt = M.prepare db "SELECT * FROM srv59515_baza01.classes_lists" |> or_die in
+  let res = M.Stmt.execute stmt [| |] |> or_die in
+  Printf.printf "number of rows: %d\n%!" (M.Res.num_rows res);
+
+  let rec next () =
+    (* Printf.printf "reading row..\n"; *)
+    match M.Res.fetch (module M.Row.Map) res with
+    | Ok (Some x) -> 
+      print_row x;
+
+      classes_lists :=  {
+        name = x |> M.Row.StringMap.find "name" |> M.Field.string; 
+        classes_list = x |> M.Row.StringMap.find "classes_list" |> M.Field.string 
+      } :: (!classes_lists);
+      next ();
+    | Ok None -> ()
+    | Error e -> raise (DBError e); 
+  in
+  next ();
+  (* Printf.printf "Close query..\n"; *)
   M.Stmt.close stmt |> or_die;
 
 
-
+  
 
 
 (* Call this only once, before you're done using all
